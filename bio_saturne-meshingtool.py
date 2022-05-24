@@ -14,7 +14,7 @@ import re
 import os
 import math
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
-import matplotlib.pyplot as plt;
+import matplotlib.pyplot as plt
 from matplotlib import ticker
 import numpy as np
 
@@ -27,7 +27,7 @@ class LauncherError(Exception):
 
 #Optional message
 class NotFoundinFile(Exception):
-    def __init__(self, search_term, search_file, message = None):
+    def __init__(self, search_term, search_file, message=None):
         self.search_term = search_term
         self.search_file = search_file
         self.message = '\n----------------Not Found in File Error----------------\n'\
@@ -43,7 +43,7 @@ class SoftwareNotFound(Exception):
         super().__init__(self.message)
 
 class UnsupportedError(Exception):
-    def __init__(self, unsupported = None, supported = None):
+    def __init__(self, unsupported=None, supported=None):
         self.unsupported = unsupported
         self.supported = supported
         prt_supported = ', '.join(supported)
@@ -52,28 +52,28 @@ class UnsupportedError(Exception):
         super().__init__(self.message)
 
 class InputError(Exception):
-    def __init__(self, user_inp, message = None):
+    def __init__(self, user_inp, message=None):
         self.user_inp = user_inp
         self.message = '\n----------------Input Error----------------\n'\
         +"Error with configured "+ user_inp +": "+ message
         super().__init__(self.message)
 
 class CodeSaturneError(Exception):
-    def __init__(self, process, message = None):
+    def __init__(self, process, message=None):
         self.process = process
         self.message = '\n----------------CodeSaturne Error----------------\n'\
         +"CodeSaturne error when" + process + ": " + message
         super().__init__(self.message)
 
 class GmshError(Exception):
-    def __init__(self, process, message = None):
+    def __init__(self, process, message=None):
         self.process = process
         self.message = '\n----------------Gmsh Error----------------\n'\
         +"Gmsh error when" + process + ": " + message
         super().__init__(self.message)
 
 class ChimeraError(Exception):
-    def __init__(self, script, message = None):
+    def __init__(self, script, message=None):
         self.script = script
         self.message = '\n----------------Chimera Error----------------\n'\
         +"Chimera error: "+message+ " \n When executing the following script:\n" + script +\
@@ -98,7 +98,7 @@ def write_launcher_err(launcher_err, cmd):
 
 #Launches given commands on the command line
 #Returns the error and output of the commands
-def launcher(cmd, ig_error = False):
+def launcher(cmd, ig_error=False):
     ind = 0
     lstdout = []
     lstderr = []
@@ -112,7 +112,8 @@ def launcher(cmd, ig_error = False):
         process_1 = sp.Popen(cur_cmd, stdout=sp.PIPE, stderr=sp.PIPE)
         stdout, stderr = process_1.communicate()
         #No error or want to parse the error
-        if len(stderr.decode('utf-8')) == 0 or (ig_error == True and len(stderr.decode('utf-8')) != 0):
+        if len(stderr.decode('utf-8')) == 0 or (ig_error == True and \
+        len(stderr.decode('utf-8')) != 0):
             lstderr.append(stderr.decode('utf-8'))
             lstdout.append(stdout.decode('utf-8'))
             ind = ind + 1
@@ -314,7 +315,7 @@ def change_user_script(study_name, case_name):
     #Find line number of script which needs changing
     line_cmd = ['grep', '-n', 'domain.mesh_input = None', study_name+'/'+ case_name+'/DATA/cs_user_scripts.py']
     line_out, line_err = launcher(line_cmd)
-    line_num = re.match('.*?(\d*):(...[^#][^\d]*)\d*.*', line_out).group(1)
+    line_num = re.match(r'.*?(\d*):(...[^#][^\d]*)\d*.*', line_out).group(1)
     #i.bak creates a backup of the original file
     sed_script = r's:domain.mesh_input = None:domain.mesh_input = "../MESH/mesh_input.csm":'
     sed_cmd =["sed", "-i.bak",sed_script,
