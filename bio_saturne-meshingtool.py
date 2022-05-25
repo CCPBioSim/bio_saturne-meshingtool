@@ -1,33 +1,34 @@
-#Naming convention
-#_name = file name without path or extension
-#_filename = file name with extnesion but without path
-#_exten = file extnesion without .
-#_filepath = path to a file including filename and extension
-#_path = path to software
+"""Naming convention
+_name = file name without path or extension
+_filename = file name with extnesion but without path
+_exten = file extnesion without .
+_filepath = path to a file including filename and extension
+_path = path to software"""
 
-import matplotlib.pyplot as plt
-from matplotlib import ticker
-import numpy as np
-import subprocess as sp #Built in
-import docstring
 import sys
 import logging
+import subprocess as sp #Built in
 import argparse
 import re
 import os
 import math
+import matplotlib.pyplot as plt
+import numpy as np
 import yaml
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 class LauncherError(Exception):
+    '''Error handling when the a cmd is sent to the launcher
+    function which results in an error'''
     def __init__(self, cmd, message):
         self.cmd = cmd
         self.message = '\n----------------Launcher Error----------------\n'\
         +cmd+'\n'+message
         super().__init__(self.message)
 
-#Optional message
 class NotFoundinFile(Exception):
+    '''Error handling when a function searches for a term in a
+    specific file'''
     def __init__(self, search_term, search_file, message=None):
         self.search_term = search_term
         self.search_file = search_file
@@ -36,6 +37,8 @@ class NotFoundinFile(Exception):
         super().__init__(self.message)
 
 class SoftwareNotFound(Exception):
+    '''Error handling when a specific software or software version
+    isn't installed on the user's machine or exported to the path'''
     def __init__(self, software, version):
         self.software = software
         self.version = version
@@ -44,6 +47,8 @@ class SoftwareNotFound(Exception):
         super().__init__(self.message)
 
 class UnsupportedError(Exception):
+    '''Error handling when the user configures the pipeline to use
+    a file format or software which isn't currently supported'''
     def __init__(self, unsupported=None, supported=None):
         self.unsupported = unsupported
         self.supported = supported
@@ -54,6 +59,8 @@ class UnsupportedError(Exception):
         super().__init__(self.message)
 
 class InputError(Exception):
+    '''Error handling when there is an error in a specific input
+    argument'''
     def __init__(self, user_inp, message=None):
         self.user_inp = user_inp
         self.message = '\n----------------Input Error----------------\n'\
@@ -61,6 +68,8 @@ class InputError(Exception):
         super().__init__(self.message)
 
 class CodeSaturneError(Exception):
+    '''Error handling when CodeSaturne throws an error, which specifies
+    which process in which the error has occured'''
     def __init__(self, process, message=None):
         self.process = process
         self.message = '\n----------------CodeSaturne Error----------------\n'\
@@ -68,6 +77,8 @@ class CodeSaturneError(Exception):
         super().__init__(self.message)
 
 class GmshError(Exception):
+    '''Error handling when Gmsh throws an error, which specifies
+    which process in which the error has occured'''
     def __init__(self, process, message=None):
         self.process = process
         self.message = '\n----------------Gmsh Error----------------\n'\
@@ -75,6 +86,8 @@ class GmshError(Exception):
         super().__init__(self.message)
 
 class ChimeraError(Exception):
+    '''Error handling when Chimera throws an error, which specifies
+    which process in which the error has occured'''
     def __init__(self, script, message=None):
         self.script = script
         self.message = '\n----------------Chimera Error----------------\n'\
@@ -82,13 +95,11 @@ class ChimeraError(Exception):
         "\nThe file chimera_error.txt has more details"
         super().__init__(self.message)
 
-
-
 logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('mesh-generator')
+Logger = logging.getLogger('mesh-generator')
 
-#Writes the entirity of the command output to a text file
 def write_launcher_err(launcher_err, cmd):
+    '''Writes the entirity of the command output to a text file'''
     launcher_err = launcher_err.split('\n')
     filename = 'launcher_error_output.txt'
     with open(filename, 'w') as lerr_file:
@@ -98,9 +109,9 @@ def write_launcher_err(launcher_err, cmd):
             lerr_file.write(le+'\n')
     return filename
 
-#Launches given commands on the command line
-#Returns the error and output of the commands
 def launcher(cmd, ig_error=False):
+    '''Launches given commands on the command line
+    Returns the error and output of the commands'''
     ind = 0
     lstdout = []
     lstderr = []
@@ -133,22 +144,22 @@ def launcher(cmd, ig_error=False):
         lstdout = lstdout[0]
     return lstdout, lstderr
 
-#Returns any number appearing in the given string
 def has_number(string):
+    '''Returns any number appearing in the given string'''
     return any(s.isdigit() for s in string)
 
-#Returns a Boolean value indicating
-#whether the given 'num' is an int or float
 def isnumber(num):
+    '''Returns a Boolean value indicating
+    whether the given 'num' is an int or float'''
     try:
         float(num)
         return True
     except ValueError:
         return False
 
-#Extracts the number of nodes and elements from the
-#output of gmsh meshing
 def find_nodes_elements(outstr, log_file):
+    '''Extracts the number of nodes and elements from the
+    output of gmsh meshing'''
     ne_exp = re.compile(r'\d+ nodes \d+ elements')
     nodes_elements = ne_exp.findall(outstr)
     if nodes_elements == [] or len(nodes_elements) > 1:
@@ -159,9 +170,9 @@ def find_nodes_elements(outstr, log_file):
     elements = e_exp.findall(nodes_elements[0])
     return nodes[0]+' and '+elements[0]
 
-#Grep for the given software in the bashrc to check for
-#Its path if an alias is used
 def grep_software_path(soft_name):
+    '''Grep for the given software in the bashrc to check for
+    Its path if an alias is used'''
     home = os.environ['HOME']
     grep_command = ['grep', soft_name, home + '/.bashrc']
     gc_out, gc_err = launcher(grep_command)
@@ -169,14 +180,14 @@ def grep_software_path(soft_name):
         return gc_out
     return gc_err
 
-#Attempts to find the software path using which
 def which_software_path(soft_name):
+    '''Attempts to find the software path using which'''
     which_path_cmd = ['which', soft_name]
     wp_out, wp_err = launcher(which_path_cmd)
     return wp_out
 
-#Finds the version of the given software
 def find_software_ver(path):
+    '''Finds the version of the given software'''
     if 'ccpem' in path:
         ver1 = re.findall(r'\.(\d)', path)
         ver2 = re.findall(r'(\d)\.', path)
@@ -191,9 +202,9 @@ def find_software_ver(path):
         return ver_out
     return ver_err
 
-#Performs checks on the installation of required software of the
-#required version
 def check_software_install(software_name, version):
+    '''Performs checks on the installation of required software of the
+    required version'''
     path = None
     which_software = which_software_path(software_name)
     if which_software != "" and which_software is not None:
@@ -212,8 +223,8 @@ def check_software_install(software_name, version):
         raise SoftwareNotFound(software_name, version)
     return path
 
-#Returns the name of a file and its extension from a given filepath
 def get_name_and_exten(filepath):
+    '''Returns the name of a file and its extension from a given filepath'''
     file_name = None
     file_exten = None
     if "/" in filepath:
@@ -230,9 +241,9 @@ def get_name_and_exten(filepath):
         file_exten = 'emd'
     return file_name, file_exten
 
-#Extracts warning messages from the output of gmsh
-#Note meshing is still considered successful even with warnings
 def extract_warnings(war_out):
+    '''Extracts warning messages from the output of gmsh
+    Note meshing is still considered successful even with warnings'''
     warn_ls = war_out.split('\n')
     wm_exp = re.compile(r'Warning : (.+)')
     warns = []
@@ -243,8 +254,8 @@ def extract_warnings(war_out):
         count = count + 1
     return warns
 
-#Displays the errors and/or warnings from gmsh output when meshing
 def process_gmsh_error(err, out, input_name, log_path):
+    '''Displays the errors and/or warnings from gmsh output when meshing'''
     en_exp = re.compile(r'(\d+) errors')
     wn_exp = re.compile(r'(\d+) warnings')
     err_num = en_exp.findall(err)
@@ -268,19 +279,18 @@ def process_gmsh_error(err, out, input_name, log_path):
         if 'overlapping facets' in err and 'No elements in volume' in err:
             message = 'Error suggests the file contains unmeshable noise'
         raise GmshError(' generating the volume for '+ input_name, message)
-    else:
-        warnings = extract_warnings(err)
-        warnings = ','.join(warnings)
-        print("Warning: "+ warnings)
-        cont = ""
-        while cont != 'y' and cont != 'n':
-            cont = input("Continue mesh generation? (y/n)").lower()
-        if cont == 'n':
-            exit_tool()
+    warnings = extract_warnings(err)
+    warnings = ','.join(warnings)
+    print("Warning: "+ warnings)
+    cont = ""
+    while cont not in ('y', 'n'):
+        cont = input("Continue mesh generation? (y/n)").lower()
+    if cont == 'n':
+        exit_tool()
 
-#Performs volumetric meshing on an STL file using gmsh and a geo script file
 def gmsh_from_stl(soft_dict, mesh_config_dict, input_filepath, input_name, log_foldr, \
 mesh_filename, mesh_name):
+    '''Performs volumetric meshing on an STL file using gmsh and a geo script file'''
     meshing_options = mesh_config_dict.keys()
     opts_lst = []
     for opt in meshing_options:
@@ -300,8 +310,8 @@ mesh_filename, mesh_name):
     mv_tmp_cmd = ['mv', geofile, '.tmp']
     launcher(mv_tmp_cmd)
 
-#Writes a geo script to mesh with gmsh
 def make_geo(stl_filepath, stl_filename):
+    '''Writes a geo script to mesh with gmsh'''
     geofilename = stl_filename + '.geo'
     try:
         gfile = open(geofilename, 'w')
@@ -313,8 +323,8 @@ def make_geo(stl_filepath, stl_filename):
         raise OSError(exception)
     return geofilename
 
-#Changes CodeSaturne's user script to point to the input mesh located in the /MESH folder
 def change_user_script(study_name, case_name):
+    '''Changes CodeSaturne's user script to point to the input mesh located in the /MESH folder'''
     #Find line number of script which needs changing
     line_cmd = ['grep', '-n', 'domain.mesh_input = None', study_name+'/'+ case_name+\
     '/DATA/cs_user_scripts.py']
@@ -336,9 +346,9 @@ def change_user_script(study_name, case_name):
         raise NotFoundinFile('domain.mesh_input = "../MESH/mesh_input.csm"', 'cs_user_scripts.py', \
         error_message)
 
-#Runs post-volume using CodeSaturne's preprocessor which outputs information on a
-#given volumetric mesh
 def cs_generate_volume(cs_prepro_path, mesh_filename, log_foldr):
+    '''Runs post-volume using CodeSaturne's preprocessor which outputs information on a
+    given volumetric mesh'''
     mesh_name, mesh_exten = get_name_and_exten(mesh_filename)
     cs_cmd = [cs_prepro_path, '--log', log_foldr+'/'+mesh_name+'_cspreprocessor.log',
               '--post-volume', mesh_filename]
@@ -350,6 +360,7 @@ def cs_generate_volume(cs_prepro_path, mesh_filename, log_foldr):
         raise CodeSaturneError('generating a volume', '\n'+cs_err)
 
 def cs_prepare_files(study_name, case_name, cs_path):
+    '''Create a case and prepare the files and directories needed to run it'''
     #Create case
     case_cmd = [cs_path, 'create', '--study', study_name, case_name, '--copy-ref']
     #Create symbolic link to mesh file in /MESH
@@ -363,6 +374,7 @@ def cs_prepare_files(study_name, case_name, cs_path):
     change_user_script(study_name, case_name)
 
 def cs_run_quality(cs_path, study_name, case_name, wd_name):
+    '''Run the quality check using CodeSaturne's preprocessor'''
     #Copy the /REFERENCE/cs_user_mesh.c into SRC folder
     cp_mesh_cmd = ['cp', study_name+'/'+ case_name+'/SRC/REFERENCE/cs_user_mesh.c',
                    study_name+'/'+ case_name+'/SRC']
@@ -381,9 +393,9 @@ def cs_run_quality(cs_path, study_name, case_name, wd_name):
         run_solver.log when running cs_solver script in', study_name+'/'+ case_name+'/RESU/\
         '+wd_name+'/')
 
-#Runs the steps required to generate a CodeSaturne case for the mesh and
-#generate information on its quality
 def cs_prepro_quality(cs_prepro_path, cs_path, mesh_filename, log_foldr):
+    '''Runs the steps required to generate a CodeSaturne case for the mesh and
+    generate information on its quality'''
     mesh_name, exten = get_name_and_exten(mesh_filename)
     case_name = mesh_name +'_case'
     study_name = mesh_name + '_study'
@@ -395,13 +407,13 @@ def cs_prepro_quality(cs_prepro_path, cs_path, mesh_filename, log_foldr):
     return study_name+'/'+ case_name+'/RESU/'+wd_name+'/'+'run_solver.log'
 
 
-#Extract the configuration arguments from the yaml file
 def extract_configs(yaml_file, input_exten, soft_dict):
+    '''Extract the configuration arguments from the yaml file'''
     mesh_config_dict = {}
     map_config_dict = {}
     chi_config_dict = {}
-    #Accepted configuration options and the input formats for which they apply to and the
-    #configuration dictionary they belong in (mesh, map or chi(mera))
+    """Accepted configuration options and the input formats for which they apply to and the
+    configuration dictionary they belong in (mesh, map or chi(mera))"""
     accepted_configs_dict = {'software':[['all'], 'mesh'], 'format':[['all'], 'mesh'],
                              'name':[['all'], 'mesh'], 'threshold':[['map', 'emd'], 'map'],
                              'dust_filter':[['map', 'emd'], 'map'],
@@ -439,23 +451,22 @@ def extract_configs(yaml_file, input_exten, soft_dict):
     meshing_soft[user_config_dict['software']] = [soft_dict[user_config_dict['software']][0]]
     return meshing_soft, mesh_config_dict, map_config_dict, chi_config_dict
 
-
-#Checks the required software is installed at the required version
-#and updates the dictionary such that it now contains the path on the user's machine
 def software_checks(soft_dict):
+    '''Checks the required software is installed at the required version
+    and updates the dictionary such that it now contains the path on the user's machine'''
     upd_soft_dict = {}
     for soft, ver in soft_dict.items():
         path = check_software_install(soft, ver[0])
         upd_soft_dict[soft] = [ver[0], path]
     return upd_soft_dict
 
-#Launches the resultant mesh file in Paraview
 def paraview_vis_surface(pv_path, mesh_filename):
+    '''Launches the resultant mesh file in Paraview'''
     vis_mesh_cmd = [pv_path, mesh_filename]
     vis_mesh_out, vis_mesh_err = launcher(vis_mesh_cmd)
 
-#Finds the frequency and upper and lower bounds of each histogram bin in the quality file
 def extract_hist_data(data_lines, quality_file):
+    '''Finds the frequency and upper and lower bounds of each histogram bin in the quality file'''
     bins = []
     freqs = []
     count = 0
@@ -478,8 +489,8 @@ def extract_hist_data(data_lines, quality_file):
         count = count + 1
     return bins, freqs
 
-#Formats the titles of each histogram
 def format_title(lines, hist_count):
+    '''Formats the titles of each histogram'''
     #Strips white space colons and indexing digits
     title = ''.join([l for l in lines[hist_count] if not (l.isdigit() or l == ':')])
     title = title.strip().split(' ')
@@ -494,16 +505,16 @@ def format_title(lines, hist_count):
         word_count = word_count + 1
     return new_title
 
-#Uses matplot lib to plot and save the histograms
 def save_histogram(title, bins, freqs, mesh_name):
+    '''Uses matplot lib to plot and save the histograms'''
     #Captures the output log of matplotlib so this isn't displayed
     plt_logger = logging.getLogger('matplotlib')
-    logger.setLevel(level=logging.DEBUG)
+    Logger.setLevel(level=logging.DEBUG)
     fh = logging.StreamHandler()
     fh_formatter = logging.Formatter('%(asctime)s %(levelname)s \
     %(lineno)d:%(filename)s(%(process)d) - %(message)s')
     fh.setFormatter(fh_formatter)
-    logger.addHandler(fh)
+    Logger.addHandler(fh)
     values = range(len(bins))
     #Represents the bin values as decimals
     exp, new_bins = decimal_representation(bins)
@@ -523,9 +534,9 @@ def save_histogram(title, bins, freqs, mesh_name):
     plt.savefig(mesh_name+'_quality/'+mesh_name+'_histograms/'+file_name);
     plt.close();
 
-#Returns a decimal representation of histogram bin bounds
-#which are given in standard form
 def decimal_representation(floats):
+    '''Returns a decimal representation of histogram bin bounds
+    which are given in standard form'''
     new_floats = []
     min_flt = min(floats)
     if min_flt == 0:
@@ -542,9 +553,9 @@ def decimal_representation(floats):
     exp = exp*-1
     return exp, new_floats
 
-#Runs the functions required to create and save the histogram files
 def generate_histograms(quality_file, hist_title_lines, hist_start_lines,
                         hist_end_lines, mesh_name):
+    '''Runs the functions required to create and save the histogram files'''
     hist_count = 0
     while hist_count < len(hist_title_lines):
         cur_start = hist_start_lines[hist_count]
@@ -562,8 +573,8 @@ def generate_histograms(quality_file, hist_title_lines, hist_start_lines,
         save_histogram(cur_title, cur_bins, cur_freqs, mesh_name)
         hist_count = hist_count + 1
 
-#Prevents histograms without data from being plotted
 def remove_hist_without_data(hist_titles_out, hist_titles, hist_start_out, min_vals, max_vals):
+    '''Prevents histograms without data from being plotted'''
     line_re = re.compile(r'(\d+):')
     title_lns = line_re.findall(hist_titles_out)
     start_lns = line_re.findall(hist_start_out)
@@ -584,8 +595,8 @@ def remove_hist_without_data(hist_titles_out, hist_titles, hist_start_out, min_v
         title_count = title_count + 1
     return new_hist_titles, new_mins, new_maxs
 
-#Removes histogram data with 0 as the minimum and the maximum
 def remove_hist_min_max(hist_titles, min_vals, max_vals, hist_data_start, hist_data_end):
+    '''Removes histogram data with 0 as the minimum and the maximum'''
     count = 0
     while count < len(hist_titles):
         if float(min_vals[count]) == 0 and float(max_vals[count]) == 0:
@@ -595,8 +606,8 @@ def remove_hist_min_max(hist_titles, min_vals, max_vals, hist_data_start, hist_d
         count = count + 1
     return hist_titles, hist_data_start, hist_data_end
 
-#Returns the lines in the file with important data for histogram generation
 def preprocess_hist_data(quality_file, mesh_name):
+    '''Returns the lines in the file with important data for histogram generation'''
     #Finds the title lines
     hist_titles_cmd = ['grep', 'Histogram of', quality_file, '-n']
     hist_titles_out, hist_titles_err = launcher(hist_titles_cmd)
@@ -613,10 +624,8 @@ def preprocess_hist_data(quality_file, mesh_name):
     #Finds the lines of the maximum and minimum value of each histogram
     min_cmd = ['grep', 'minimum value = ', quality_file]
     max_cmd = ['grep', 'maximum value = ', quality_file]
-    max_ln_cmd = ['grep', 'maximum value = ', quality_file, '-n']
     min_out, min_err = launcher(min_cmd)
     max_out, max_err = launcher(max_cmd)
-    max_ln_out, max_ln_err = launcher(max_ln_cmd)
     min_vals = min_out.replace('minimum value = ', '').strip().split('\n')
     max_vals = max_out.replace('maximum value = ', '').strip().split('\n')
     #Catches errors which may occur for the histogram data
@@ -635,8 +644,9 @@ def preprocess_hist_data(quality_file, mesh_name):
     max_vals, hist_data_start, hist_data_end)
     return hist_titles, hist_data_start, hist_data_end
 
-#Moves the quality file into the appropriate directory and generates histograms if specified
 def process_cs_quality(quality_file, save_hist, mesh_name):
+    '''Moves the quality file into the appropriate directory and generates histograms if 
+    specified'''
     qual_foldr_cmd = ['mkdir', mesh_name+'_quality']
     cp_qual_cmd = ['cp', quality_file, mesh_name+'_quality/'+mesh_name+'_quality.log']
     launcher([qual_foldr_cmd, cp_qual_cmd])
@@ -649,14 +659,14 @@ def process_cs_quality(quality_file, save_hist, mesh_name):
         print("Histograms successfully generated and stored as pdfs in /"+mesh_name+'_quality/'\
         +mesh_name + '_histograms')
 
-#Makes a logging directory for gmsh and CodeSaturne output
 def make_logging_folder(mesh_name):
+    '''Makes a logging directory for gmsh and CodeSaturne output'''
     log_foldr_cmd = ['mkdir', mesh_name+'_loggers']
     launcher(log_foldr_cmd)
     return mesh_name+'_loggers'
 
-#Checks if the given name for the mesh file already exists in the current directory
 def mesh_filename_preexist(mesh_name, mesh_exten):
+    '''Checks if the given name for the mesh file already exists in the current directory'''
     preexist = False
     lsout, lserr = launcher(['ls'])
     mesh_filename = format_mesh_filename(mesh_name, mesh_exten)
@@ -666,19 +676,19 @@ def mesh_filename_preexist(mesh_name, mesh_exten):
         #Allows the user to enter a new file name or overwrite the pre-exsisting file
         print("WARNING: File of the name", mesh_filename, "already exists in the \
         current directory")
-        while not(cont == 'y' or cont == 'n'):
+        while cont not in ('y', 'n'):
             cont = input("Enter 'Y' to continue and overwrite the file or 'N' to \
             provide a new file name: ")
             cont = cont.lower()
-            if not(cont == 'y' or cont == 'n'):
+            if cont not in ('y', 'n'):
                 print("\nPlease enter 'Y' or 'N'")
         if cont == 'n':
-            mesh_filename == input("Please enter a new file name: ")
+            mesh_filename = input("Please enter a new file name: ")
     return preexist, mesh_filename
 
-#Replaces any spaces in the given filename with underscores and checks it doesn't
-#include an extension
 def format_mesh_filename(mesh_name, mesh_exten):
+    '''Replaces any spaces in the given filename with underscores and checks it doesn't
+    include an extension'''
     mesh_filename = mesh_name.replace(' ', '_')
     if not '.' in mesh_name:
         mesh_filename = mesh_name+'.'+mesh_exten
@@ -687,36 +697,36 @@ def format_mesh_filename(mesh_name, mesh_exten):
         (this name shouldn't include an extension)")
     return mesh_filename
 
-#Checks the mesh filename
 def check_mesh_filename(mesh_name, mesh_exten, input_name):
+    '''Checks the mesh filename'''
     #If it isn't provided the name of the input file is used partially
-    if mesh_name == None:
+    if mesh_name is None:
         mesh_name = input_name + "_3d"
     #Then check if the file already exsists
     while True:
         preexist, mesh_filename = mesh_filename_preexist(mesh_name, mesh_exten)
-        if preexist == False:
+        if not preexist:
             break
     return mesh_filename
 
-#Check the configurations provided for meshing are supported
 def check_meshing_args(mesh_config_dict, supported_dict):
+    '''Check the configurations provided for meshing are supported'''
     #Check the output format is supported
     if not mesh_config_dict['format'] in supported_dict['mesh_format']:
         raise UnsupportedError('configured mesh format', supported_dict['mesh_format'])
-    elif not mesh_config_dict['software'] in supported_dict['meshing_soft']:
+    if not mesh_config_dict['software'] in supported_dict['meshing_soft']:
         #Check the meshing software is supported
         raise UnsupportedError('configured meshing software', supported_dict['meshing_soft'])
 
-#Check the input argument
 def check_input_args(input_format, inp, supported_input, soft_dict):
+    '''Check the input argument'''
     #Check the format of the input file is supported
     if input_format not in supported_input:
         raise UnsupportedError('input file format', input_format)
     #Check for emd entries that the input is given in the format emd_{entry number}
     if input_format == 'emd':
         format_chk = bool(re.match(r'emd_\d+', inp))
-        if format_chk == False:
+        if not format_chk:
             raise InputError('emd entry', r"\nPlease enter the input in the format: \
             emd_{entry number} e.g. emd_3066")
     else:
@@ -726,7 +736,7 @@ def check_input_args(input_format, inp, supported_input, soft_dict):
             raise InputError('input file', '\nPlease ensure the input file is saved with \
             the appropriate extension specified in --format')
     #Add extra software requirements for map cleaning and generating an stl
-    if input_format == 'map' or input_format == 'emd':
+    if input_format in ('map', 'emd'):
         soft_dict['ucsf-chimerax'] = ['1.3']
         soft_dict['ccpem'] = ['1.5.0']
     elif input_format == 'pdb':
@@ -735,8 +745,8 @@ def check_input_args(input_format, inp, supported_input, soft_dict):
         soft_dict['gmsh'] = ['4.8.4']
     return soft_dict
 
-#Move any folders/files that weren't initially in the directory to .tmp
 def clean_directory(mesh_name, ini_dir):
+    '''Move any folders/files that weren't initially in the directory to .tmp'''
     ls_cmd = ['ls']
     ls_out, ls_err = launcher(ls_cmd)
     ls_out = ls_out.split('\n')
@@ -747,8 +757,8 @@ def clean_directory(mesh_name, ini_dir):
         mv_tmp_cmd = ['mv', mv_fldr, '.tmp']
         launcher(mv_tmp_cmd)
 
-#Use rsync to download the map file from EMDB
 def download_emd(emd):
+    '''Use rsync to download the map file from EMDB'''
     print("------------DOWNLOADING EMD FILE--------------")
     num_re = re.compile(r'emd_(\d*)')
     entry_num = num_re.findall(emd)[0]
@@ -763,8 +773,8 @@ def download_emd(emd):
     print(map_filename)
     return map_filename
 
-#Perform map cleaning using CCPEM toolkit
 def ccpem_cleaning(ccpem_path, map_filepath, map_name, map_config_dict):
+    '''Perform map cleaning using CCPEM toolkit'''
     config_cmd = []
     map_configs = map_config_dict.keys()
     for config in map_configs:
@@ -777,7 +787,7 @@ def ccpem_cleaning(ccpem_path, map_filepath, map_name, map_config_dict):
                 'dust_filter' in the configuration file. This must be True or False")
         #Check threshold argument given is a number and add the command to perform this
         if config == 'threshold':
-            if isnumber(map_config_dict[config]) == True:
+            if isnumber(map_config_dict[config]):
                 config_cmd = config_cmd + ['-t',
                                            str(map_config_dict[config])]
             else:
@@ -791,8 +801,8 @@ def ccpem_cleaning(ccpem_path, map_filepath, map_name, map_config_dict):
     #Return the cleaned map name
     return map_name+'_cleaned.map'
 
-#Extracts relevant information to raise a ChimeraError
 def process_chi_error(chi_err, cxc_filename):
+    '''Extracts relevant information to raise a ChimeraError'''
     #Read the chimera script to display to the user
     cxc_script = ""
     with open(cxc_filename, 'r') as cxc_file:
@@ -816,8 +826,8 @@ def process_chi_error(chi_err, cxc_filename):
             chi_file.write(chi_ln + '\n')
     raise ChimeraError(cxc_script, main_err)
 
-#Convert the given file to an STL using ChimeraX
 def to_stl(chimera_path, filepath, name, exten, chi_config_dict):
+    '''Convert the given file to an STL using ChimeraX'''
     print("------------CONVERTING TO STL------------")
     cxc_filename = name+"_chimerax_script.cxc"
     chi_configs = chi_config_dict.keys()
@@ -830,10 +840,10 @@ def to_stl(chimera_path, filepath, name, exten, chi_config_dict):
          in the configuration file when using a pdb input")
     #Check other chimera scripting arguments given are numbers
     for cc in chi_configs:
-        if isnumber(chi_config_dict[cc]) == False:
+        if not isnumber(chi_config_dict[cc]):
             raise InputError('configurations', "\nInvalid value for argument '"+cc+"' in the\
              configuration file. This must be an integer or float")
-        elif cc == 'probe_radius':
+        if cc == 'probe_radius':
             cxc_file.write(f"surface probeRadius {chi_config_dict[cc]}\n")
             #Ribbon representations of pbd files must be hidden or they create an inner surface
             cxc_file.write("~ribbon\n")
@@ -851,8 +861,8 @@ def to_stl(chimera_path, filepath, name, exten, chi_config_dict):
     launcher(mv_tmp_cmd)
     return name
 
-#Lists all the files initially in the directory before running the pipeline
 def get_initial_dir():
+    '''Lists all the files initially in the directory before running the pipeline'''
     ini_dir = []
     ls_cmd = ['ls', '-a']
     ls_out, ls_err = launcher(ls_cmd)
@@ -862,7 +872,7 @@ def get_initial_dir():
     if '.tmp' in ini_dir:
         print("Hidden directory .tmp already exists in the directory (from a previous run)")
         ask = True
-        while ask == True:
+        while ask:
             overwrite = input("Overwrite this directory (y/n)")
             if overwrite.lower() == 'y':
                 rm_tmp_cmd = ['rm', '-r', '.tmp']
@@ -873,13 +883,12 @@ def get_initial_dir():
                 exit_tool()
     return ini_dir
 
-#Ends the program
 def exit_tool():
+    '''Ends the program'''
     print("-----------END PROGRAM------------")
     sys.exit()
 
 def main():
-
     initial_contents = get_initial_dir()
     meshing_soft = {}
     #CodeSaturne is the only software required for any input format
@@ -916,7 +925,7 @@ def main():
     #For emd entry inputs, the input name is emd_{entry number} and extension is emd
     input_name, input_exten = get_name_and_exten(input_filepath)
     #Check the meshing configurations if provided
-    if args.configs != None:
+    if args.configs is not None:
         #Extract configs from yaml and update required software dictionary
         meshing_soft, mesh_config_dict, map_config_dict, chi_config_dict = \
         extract_configs(args.configs, input_exten, soft_dict)
@@ -935,7 +944,7 @@ def main():
         mesh_filepath = args.input
 
     #If the visualisation flag is enabled add paraview to the software dictionary
-    if args.visualise == True:
+    if args.visualise:
         soft_dict['paraview'] = ['5.7.0']
 
     #Check all the required software is installed to run the pipeline
@@ -951,7 +960,7 @@ def main():
     log_foldr = make_logging_folder(mesh_name)
 
     #Handles emd entry number and map file inputs
-    if input_exten == "emd" or input_exten == "map":
+    if input_exten in ("emd", "map"):
         if input_exten == 'emd':
             map_filepath = download_emd(input_name)
         elif input_exten == 'map':
@@ -991,7 +1000,7 @@ def main():
     print("CodeSaturne quality assessment complete.\nFile located: "+ quality_file)
 
     #If histogram flag is given then save data in histogram form for the mesh
-    if args.histograms == False:
+    if not args.histograms:
         save_hist = False
     else:
         save_hist = True
