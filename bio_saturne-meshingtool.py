@@ -6,6 +6,7 @@ _filepath = path to a file including filename and extension
 _path = path to software"""
 
 import sys
+from datetime import datetime
 import logging
 import subprocess as sp #Built in
 import argparse
@@ -91,7 +92,7 @@ class ChimeraError(Exception):
     def __init__(self, script, message=None):
         self.script = script
         self.message = '\n----------------Chimera Error----------------\n'\
-        +"Chimera error: "+message+ " \n When executing the following script:\n" + script +\
+        +"Chimera error: "+message+ " \nWhen executing the following script:\n" + script +\
         "\nThe file chimera_error.txt has more details"
         super().__init__(self.message)
 
@@ -101,7 +102,9 @@ Logger = logging.getLogger('mesh-generator')
 def write_launcher_err(launcher_err, cmd):
     '''Writes the entirity of the command output to a text file'''
     launcher_err = launcher_err.split('\n')
-    filename = 'launcher_error_output.txt'
+    now = datetime.now()
+    time = now.strftime("%d%m%Y-%H%M%S")
+    filename = 'cmd_err_'+time+'.txt'
     with open(filename, 'w') as lerr_file:
         lerr_file.write('\t\t Command Line Ouput\n')
         lerr_file.write('CMD: '+cmd+'\n\n')
@@ -389,9 +392,9 @@ def cs_run_quality(cs_path, study_name, case_name, wd_name):
     solv_out, solv_err = launcher([cp_mesh_cmd, run_init_cmd, run_solv_cmd, check_solv_cmd])
     solv_files = solv_out[-1].split('\n')
     if not 'run_solver.log' in solv_files:
-        raise CodeSaturneError('running cs_solver --quality', 'Check for the generation of \
-        run_solver.log when running cs_solver script in', study_name+'/'+ case_name+'/RESU/\
-        '+wd_name+'/')
+        raise CodeSaturneError('running cs_solver --quality', 'Check for the generation of'
+        'run_solver.log when running cs_solver script in', study_name+'/'+ case_name+'/RESU/'
+        +wd_name+'/')
 
 def cs_prepro_quality(cs_prepro_path, cs_path, mesh_filename, log_foldr):
     '''Runs the steps required to generate a CodeSaturne case for the mesh and
@@ -422,13 +425,18 @@ def extract_configs(yaml_file, input_exten, soft_dict):
     loader = yaml.Loader
     meshing_soft = {}
     stream = open(yaml_file, 'r')
-    user_config_dict = yaml.load(stream, Loader=loader)
+    try:
+        user_config_dict = yaml.load(stream, Loader=loader)
+    except yaml.YAMLError:
+        raise InputError(yaml_file, "\nPlease check the contents of your yaml "
+                         "configuration file \n(use http://www.yamllint.com/ to" 
+                         " check for formatting errors)")
     user_configs = list(user_config_dict.keys())
     accepted_configs = list(accepted_configs_dict.keys())
     #Check the required configurations are provided
     if not set(['software', 'format']).issubset(user_configs):
-        raise InputError("configurations", "\nPlease specify the meshing software'\
-                         and 'format' in the configuration file")
+        raise InputError("configurations", "\nPlease specify the meshing software'"
+                         "and 'format' in the configuration file")
     #Check if any arguments in the configuration file aren't accepted
     diff = list(set(user_configs) - set(accepted_configs))
     if diff != []:
@@ -438,8 +446,8 @@ def extract_configs(yaml_file, input_exten, soft_dict):
     for uc in user_configs:
         if accepted_configs_dict[uc][0] != ['all'] and input_exten not in \
         accepted_configs_dict[uc][0]:
-            raise InputError('configurations', "\nThe argument '"+uc+"' given in the"+
-                             " configuration file is not permitted for inputs of the format "\
+            raise InputError('configurations', "\nThe argument '"+uc+"' given in the"
+                             " configuration file is not permitted for inputs of the format "
                              + input_exten)
         dict_name = accepted_configs_dict[uc][1]
         if dict_name == 'map':
@@ -674,11 +682,11 @@ def mesh_filename_preexist(mesh_name, mesh_exten):
         preexist = True
         cont = ""
         #Allows the user to enter a new file name or overwrite the pre-exsisting file
-        print("WARNING: File of the name", mesh_filename, "already exists in the \
-        current directory")
+        print("WARNING: File of the name", mesh_filename, "already exists in the"
+        "current directory")
         while cont not in ('y', 'n'):
-            cont = input("Enter 'Y' to continue and overwrite the file or 'N' to \
-            provide a new file name: ")
+            cont = input("Enter 'Y' to continue and overwrite the file or 'N' to"
+            "provide a new file name: ")
             cont = cont.lower()
             if cont not in ('y', 'n'):
                 print("\nPlease enter 'Y' or 'N'")
@@ -693,8 +701,8 @@ def format_mesh_filename(mesh_name, mesh_exten):
     if not '.' in mesh_name:
         mesh_filename = mesh_name+'.'+mesh_exten
     else:
-        raise InputError('mesh name', "check the 'name' field in the configuration file \
-        (this name shouldn't include an extension)")
+        raise InputError('mesh name', "check the 'name' field in the configuration file"
+        "(this name shouldn't include an extension)")
     return mesh_filename
 
 def check_mesh_filename(mesh_name, mesh_exten, input_name):
@@ -726,15 +734,16 @@ def check_input_args(input_format, inp, supported_input, soft_dict):
     #Check for emd entries that the input is given in the format emd_{entry number}
     if input_format == 'emd':
         format_chk = bool(re.match(r'emd_\d+', inp))
-        if not format_chk:
-            raise InputError('emd entry', r"\nPlease enter the input in the format: \
-            emd_{entry number} e.g. emd_3066")
+        integer_chk = inp.isdigit()
+        if not (format_chk or integer_chk):
+            raise InputError('emd entry', "\n"+r"Please enter the input in the format:"
+            r" emd_{entry number} e.g. emd_3066")
     else:
         input_name, input_exten = get_name_and_exten(inp)
         #Check the format of the input file matches the format argument given
         if input_exten != input_format:
-            raise InputError('input file', '\nPlease ensure the input file is saved with \
-            the appropriate extension specified in --format')
+            raise InputError('input file', '\nPlease ensure the input file is saved with'
+            'the appropriate extension specified in --format')
     #Add extra software requirements for map cleaning and generating an stl
     if input_format in ('map', 'emd'):
         soft_dict['ucsf-chimerax'] = ['1.3']
@@ -760,8 +769,11 @@ def clean_directory(mesh_name, ini_dir):
 def download_emd(emd):
     '''Use rsync to download the map file from EMDB'''
     print("------------DOWNLOADING EMD FILE--------------")
-    num_re = re.compile(r'emd_(\d*)')
-    entry_num = num_re.findall(emd)[0]
+    if emd.isdigit():
+        entry_num = int(emd)
+    else:
+        num_re = re.compile(r'emd_(\d*)')
+        entry_num = num_re.findall(emd)[0]
     emd_cmd = ['rsync', '-rlpt', '-v', '-z', '--delete',
                'rsync.ebi.ac.uk::pub/databases/emdb/structures/EMD-' \
     +str(entry_num)+'/map', './EMD-'+str(entry_num)]
@@ -783,20 +795,19 @@ def ccpem_cleaning(ccpem_path, map_filepath, map_name, map_config_dict):
             if map_config_dict[config].lower() == 'true':
                 config_cmd = config_cmd + ['-l', 'dust_filter']
             elif map_config_dict[config].lower() != 'false':
-                raise InputError('configurations', "\nInvalid value for argument \
-                'dust_filter' in the configuration file. This must be True or False")
+                raise InputError('configurations', "\nInvalid value for argument"
+                "'dust_filter' in the configuration file. This must be True or False")
         #Check threshold argument given is a number and add the command to perform this
         if config == 'threshold':
             if isnumber(map_config_dict[config]):
                 config_cmd = config_cmd + ['-t',
                                            str(map_config_dict[config])]
             else:
-                raise InputError('configurations', "\nInvalid value for argument 'threshold' \
-                in the configuration file. This must be an integer or float")
+                raise InputError('configurations', "\nInvalid value for argument 'threshold'"
+                "in the configuration file. This must be an integer or float")
     ccpem_cmd = ['ccpem-python', ccpem_path[0:-10]+ \
     'lib/py2/ccpem/src/ccpem_core/map_tools/TEMPy/map_preprocess.pyc', '-m', map_filepath] \
     + config_cmd + ['-out', map_name +'_cleaned.map']
-    print(ccpem_cmd)
     launcher(ccpem_cmd)
     #Return the cleaned map name
     return map_name+'_cleaned.map'
@@ -836,13 +847,13 @@ def to_stl(chimera_path, filepath, name, exten, chi_config_dict):
     cxc_file.write(f"open {filepath}\n")
     #PDB files require a probe radius to generate a surface
     if 'probe_radius' not in chi_configs and exten == 'pdb':
-        raise InputError('configurations', "\nPlease provide a value for 'probe_radius'\
-         in the configuration file when using a pdb input")
+        raise InputError('configurations', "\nPlease provide a value for 'probe_radius'"
+        " in the configuration file when using a pdb input")
     #Check other chimera scripting arguments given are numbers
     for cc in chi_configs:
         if not isnumber(chi_config_dict[cc]):
-            raise InputError('configurations', "\nInvalid value for argument '"+cc+"' in the\
-             configuration file. This must be an integer or float")
+            raise InputError('configurations', "\nInvalid value for argument '"+cc+"' in the"
+            " configuration file. This must be an integer or float")
         if cc == 'probe_radius':
             cxc_file.write(f"surface probeRadius {chi_config_dict[cc]}\n")
             #Ribbon representations of pbd files must be hidden or they create an inner surface
@@ -905,13 +916,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--input", required=True, help="path to the input file")
     parser.add_argument("-f", "--format", required=True, help="format of the input file")
-    parser.add_argument("-c", "--configs", required=False, help="file name (and path) to \
-    configuration yaml file")
+    parser.add_argument("-c", "--configs", required=False, help="file name (and path) to "
+    "configuration yaml file")
     #Histograms and visualisation are optional flags
-    parser.add_argument("-hg", "--histograms", required=False, help="flag to generate \
-    histograms to assess mesh quality", action="store_true")
-    parser.add_argument("-v", "--visualise", required=False, help="Generates a \
-    visualisation of the surface in Paraview", action='store_true')
+    parser.add_argument("-hg", "--histograms", required=False, help="flag to generate "
+    "histograms to assess mesh quality", action="store_true")
+    parser.add_argument("-v", "--visualise", required=False, help="Generates a "
+    "visualisation of the surface in Paraview", action='store_true')
     args = parser.parse_args()
 
     #Generate a software dictionary with all the baseline required software
