@@ -749,7 +749,7 @@ def check_input_args(input_format, inp, supported_input, soft_dict):
         soft_dict['ucsf-chimerax'] = ['1.3']
         soft_dict['ccpem'] = ['1.5.0']
     elif input_format == 'pdb':
-        soft_dict['ccpem'] = ['1.5.0']
+        soft_dict['ucsf-chimerax'] = ['1.3']
     if input_format != 'msh':
         soft_dict['gmsh'] = ['4.8.4']
     return soft_dict
@@ -934,7 +934,7 @@ def main():
     #Update the software dictionary depending on required software for specific input formats
     #e.g. ChimeraX for emd and map inputs
     soft_dict = check_input_args(args.format, args.input, supported_dict['input_format'], soft_dict)
-    input_filepath = args.input
+    input_filepath = '../'+args.input
     #For emd entry inputs, the input name is emd_{entry number} and extension is emd
     input_name, input_exten = get_name_and_exten(input_filepath)
     #Check the meshing configurations if provided
@@ -972,6 +972,7 @@ def main():
     run_directory = mesh_name + date_time
     runcmd = ['mkdir', run_directory]
     launcher(runcmd)
+    #Change to the run directory so all subsequent files are stored here
     os.chdir(run_directory)
 
     #Make hidden directory to store temporary files
@@ -985,7 +986,7 @@ def main():
         if input_exten == 'emd':
             map_filepath = download_emd(input_name)
         elif input_exten == 'map':
-            map_filepath = input_filepath
+            map_filepath = '../'+input_filepath
         #Filters map and converts the format to stl
         map_name, map_exten = get_name_and_exten(map_filepath)
         if map_config_dict != {}:
