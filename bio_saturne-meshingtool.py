@@ -881,7 +881,9 @@ def get_initial_dir():
     ini_dir = [i for i in ini_dir if i != ""]
     #Checks if there is already a hidden tmp directory
     if '.tmp' in ini_dir:
-        print("Hidden directory .tmp already exists in the directory (from a previous run)")
+        print("Hidden directory .tmp already exists in the directory (from a previous run)\n"
+        "If you want to retain this directory please rename it appropriately and"
+        "start this run again")
         ask = True
         while ask:
             overwrite = input("Overwrite this directory (y/n)")
