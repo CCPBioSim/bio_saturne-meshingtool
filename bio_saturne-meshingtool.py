@@ -306,7 +306,7 @@ mesh_filename, mesh_name):
     mesh_cmd = [soft_dict['gmsh'][1]]+ opts_lst+['-3', '-o', mesh_filename, '-format', \
     mesh_config_dict['format'], geofile, '-log', log_file]
     mesh_out, mesh_err = launcher(mesh_cmd, True)
-    if mesh_err is not None:
+    if mesh_err not in ("", None):
         process_gmsh_error(mesh_err, mesh_out, input_name, log_file)
     print("Volumetric mesh (", mesh_filename, ") generated with", \
     find_nodes_elements(mesh_out, log_file))
