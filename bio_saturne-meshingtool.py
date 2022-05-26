@@ -966,6 +966,14 @@ def main():
     #Extract the mesh name from the filepath
     mesh_name, mesh_exten = get_name_and_exten(mesh_filepath)
 
+    #Make the run directory in which to store all other files
+    now = datetime.now()
+    date_time = now.strftime("_%d%m%Y_%H%M%S")
+    run_directory = mesh_name + date_time
+    runcmd = ['mkdir', run_directory]
+    launcher(runcmd)
+    os.chdir(run_directory)
+
     #Make hidden directory to store temporary files
     tmpcmd = ['mkdir', '.tmp']
     launcher(tmpcmd)
