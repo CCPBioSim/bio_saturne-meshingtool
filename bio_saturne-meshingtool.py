@@ -857,6 +857,7 @@ def to_stl(chimera_path, filepath, name, exten, chi_config_dict):
         if cc == 'probe_radius':
             cxc_file.write(f"surface probeRadius {chi_config_dict[cc]}\n")
             #Ribbon representations of pbd files must be hidden or they create an inner surface
+            cxc_file.write("hide all\n")
             cxc_file.write("~ribbon\n")
         else:
             cxc_file.write(f"surface gridSpacing {chi_config_dict[cc]}\n")
