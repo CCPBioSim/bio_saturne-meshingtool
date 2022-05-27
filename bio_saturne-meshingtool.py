@@ -406,8 +406,12 @@ def cs_prepro_quality(cs_prepro_path, cs_path, mesh_filename, log_foldr):
     cs_generate_volume(cs_prepro_path, mesh_filename, log_foldr)
     cs_prepare_files(study_name, case_name, cs_path)
     cs_run_quality(cs_path, study_name, case_name, wd_name)
+    quality_file = study_name+'/'+ case_name+'/RESU/'+wd_name+'/'+'run_solver.log'
+    qual_foldr_cmd = ['mkdir', mesh_name+'_quality']
+    cp_qual_cmd = ['cp', quality_file, mesh_name+'_quality/'+mesh_name+'_quality.log']
+    launcher([qual_foldr_cmd, cp_qual_cmd])
     #run_solver.log contains the output of the quality check (post-volume)
-    return study_name+'/'+ case_name+'/RESU/'+wd_name+'/'+'run_solver.log'
+    return mesh_name+'_quality/'+mesh_name+'_quality.log'
 
 
 def extract_configs(yaml_file, input_exten, soft_dict):
@@ -653,11 +657,7 @@ def preprocess_hist_data(quality_file, mesh_name):
     return hist_titles, hist_data_start, hist_data_end
 
 def process_cs_quality(quality_file, save_hist, mesh_name):
-    '''Moves the quality file into the appropriate directory and generates histograms if 
-    specified'''
-    qual_foldr_cmd = ['mkdir', mesh_name+'_quality']
-    cp_qual_cmd = ['cp', quality_file, mesh_name+'_quality/'+mesh_name+'_quality.log']
-    launcher([qual_foldr_cmd, cp_qual_cmd])
+    '''Generates histograms if specified using the -hg flag'''
     if save_hist:
         print("\n----------HISTOGRAMS----------")
         hist_foldr_cmd = ['mkdir', mesh_name+'_quality/'+mesh_name + '_histograms']
@@ -782,7 +782,6 @@ def download_emd(emd):
     unzip_cmd = ['gunzip', 'emd_'+str(entry_num)+'.map.gz']
     launcher([emd_cmd, mv_emd_cmd, unzip_cmd])
     map_filename = 'emd_'+str(entry_num)+'.map'
-    print(map_filename)
     return map_filename
 
 def ccpem_cleaning(ccpem_path, map_filepath, map_name, map_config_dict):
