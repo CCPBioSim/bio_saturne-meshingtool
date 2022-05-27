@@ -228,6 +228,7 @@ def check_software_install(software_name, version):
 
 def get_name_and_exten(filepath):
     '''Returns the name of a file and its extension from a given filepath'''
+    filepath = filepath.replace('..', '')
     file_name = None
     file_exten = None
     if "/" in filepath:
@@ -240,7 +241,6 @@ def get_name_and_exten(filepath):
         file_exten = file_name[exten_ind+1:]
         file_name = file_name[:exten_ind]
     else:
-        file_name = filepath
         file_exten = 'emd'
     return file_name, file_exten
 
