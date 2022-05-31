@@ -169,6 +169,11 @@ is created which stores graphed data from the quality log file on various aspect
   ```
   This uses CodeSaturne's preprocessor to run a quality check on a pre-existing mesh.
   As mentioned previously, the histogram flag (```-hg```) is optional all data can be found in the file ```mesh_name_quality.log```.
-    MSH                             |   Histogram
+    25408_msh<sup>[4]</sup>         |   Histogram
   :--------------------------------:|:-------------------------------------:
   ![](./imgs/msh_25408.jpeg)        |  ![](./imgs/msh_25408_hist.jpeg)
+
+  The histogram on the right is just one example of the histograms generated from CodeSaturne's 
+  pre-processor data. All values shown on the axis are rounded to 3 s.f.
+
+  [4]:  https://www.ebi.ac.uk/emdb/EMD-25408
