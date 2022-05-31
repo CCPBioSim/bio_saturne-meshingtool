@@ -165,7 +165,10 @@ is created which stores graphed data from the quality log file on various aspect
 
 - ## From MSH
   ``` sh
-  bio_saturne-meshingtool.py -i 25408.msh -f msh -c 
+  bio_saturne-meshingtool.py -i 25408.msh -f msh -hg 
   ```
   This uses CodeSaturne's preprocessor to run a quality check on a pre-existing mesh.
   As mentioned previously, the histogram flag (```-hg```) is optional all data can be found in the file ```mesh_name_quality.log```.
+    MSH                             |   Histogram
+  :--------------------------------:|:-------------------------------------:
+  ![](./imgs/msh_25408.jpeg)        |  ![](./imgs/msh_25408_hist.jpeg)
