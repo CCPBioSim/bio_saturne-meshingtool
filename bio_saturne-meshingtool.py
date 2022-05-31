@@ -506,8 +506,8 @@ def format_title(lines, hist_count):
     #Strips white space colons and indexing digits
     title = ''.join([l for l in lines[hist_count] if not (l.isdigit() or l == ':')])
     title = title.strip().split(' ')
-    new_title = ' '.join(title[0:3])
-    word_count = 3
+    new_title = ' '.join(title[0:2])
+    word_count = 2
     #Capitalises relevant title words
     while word_count < len(title):
         if not (title[word_count] == 'of' or title[word_count] == 'the'):
@@ -534,13 +534,17 @@ def save_histogram(title, bins, freqs, mesh_name):
     widths = [-1] * (len(values) -1)
     widths.insert(0, 0)
     cur_fig = plt.bar(x=values, tick_label=new_bins, height=freqs, width=widths, align="edge");
+    plt.xticks(fontsize = 6)
     plt.title(title);
     plt.ylabel('Frequency');
     plt.margins(x=0);
     #Implement superscripting
-    sup_script = str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")
-    sup_exp = str(exp).translate(sup_script)
-    x_axis = ' '.join(title.split(' ')[3:]) + ' Factor (10' + sup_exp + ')'
+    if exp != 0:
+        sup_script = str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹")
+        sup_exp = str(exp).translate(sup_script)
+        x_axis = ' '.join(title.split(' ')[3:]) + ' Factor (10' + sup_exp + ')'
+    else:
+        x_axis = ' '.join(title.split(' ')[3:])
     plt.xlabel(x_axis);
     file_name = mesh_name + '_'+title.replace(' ', '_') + '.pdf'
     plt.savefig(mesh_name+'_quality/'+mesh_name+'_histograms/'+file_name);
@@ -553,11 +557,16 @@ def decimal_representation(floats):
     min_flt = min(floats)
     if min_flt == 0:
         no_zero = [n for n in floats if n != 0]
-        recip = min(no_zero)
+        min_flt = min(no_zero)
+    no_min = floats.copy()
+    no_min.remove(min_flt)
+    sec_min = min(no_min)
+    if min_flt < 1 and sec_min / min_flt < 1000:
+        recip = 1/min_flt
+        log_ten = math.log(recip, 10)
+        exp = math.ceil(log_ten)
     else:
-        recip = 0.1/min_flt
-    log_ten = math.log(recip, 10)
-    exp = -1*math.ceil(log_ten)
+        exp = 0
     for flt in floats:
         new_flt = flt*(10**exp)
         #Each value is approximated to 3 decimal places
