@@ -13,6 +13,12 @@ The BioSaturne Pipeline supports the following input formats
 - [Finite Element Mesh](#from-msh) (.msh)
 - [EMDB Entry Number](#from-emdmap) (emd_{entry number})
 
+## Installation
+To install and use the program simply download ```bio_saturne-meshingtool.py``` from the repository.
+This can be done by following the link to the program on GitHub, clicking Raw and then saving the
+program locally.
+Please refer to the installation requirements below before running the program.
+
 ## Installation Requirements
 The pipeline only has one core software requirement
 - [CodeSaturne](https://www.code-saturne.org) (ver 7.0.0+)
