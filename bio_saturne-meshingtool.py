@@ -44,7 +44,7 @@ class SoftwareNotFound(Exception):
         self.software = software
         self.version = version
         self.message = '\n----------------Software Not Found Error----------------\n'\
-        +"Please install "+ software +" version " + version + " or export it to your current path"
+        +"Please install "+ software +" version " + version + " or export it to $PATH"
         super().__init__(self.message)
 
 class UnsupportedError(Exception):
