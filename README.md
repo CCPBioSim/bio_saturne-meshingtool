@@ -1,8 +1,8 @@
 # BioSaturne Pipeline
 The BioSaturne Pipeline is a chain of pre-exsisting software tools
-linked together to create a finite element volumetric mesh (.msh) which can
+linked together to create an unstructured volumetric mesh which can
 then be used in a BioSaturne or FFEA simulation.
-It can also be used to quality check a (pre-exsisting) finite element
+It can also be used to quality check a (pre-exsisting)
 mesh using CodeSaturne's preprocessor.
 
 ## Supported Input Formats
@@ -10,22 +10,23 @@ The BioSaturne Pipeline supports the following input formats
 - [STL](#from-stl) (.stl) 
 - [PDB](#from-pdb) (.pdb)
 - [Cryo-EM Map](#from-emdmap) (.map)
-- [Finite Element Mesh](#from-msh) (.msh)
+- [Mesh](#from-msh) (.msh)
 - [EMDB Entry Number](#from-emdmap) (emd_{entry number})
 
 ## Installation
-To install and use the program simply download ```bio_saturne-meshingtool.py``` from the repository.
+To install and use the program simply download [```bio_saturne-meshingtool.py```](https://github.com/CCPBioSim/bio_saturne-meshingtool/blob/main/bio_saturne-meshingtool.py) from the repository.
 This can be done by following the link to the program on GitHub, clicking Raw and then saving the
 program locally.
 Please refer to the installation requirements below before running the program.
 
 ## Installation Requirements
-The pipeline only has one core software requirement
+For all intended uses the pipeline requires
 - [CodeSaturne](https://www.code-saturne.org) (ver 7.0.0+)
-If you are running the pipeline with a pre-exsisting mesh (.msh) this is 
-the only software you are required to install
 
-Other software required to run the pipeline depends on the format of the input.
+If you are running the pipeline to perform a quality check on a pre-exsisting mesh this is 
+the only software you are required to install.
+
+Additional software requirements depend on the format of the input as shown below.
 | Software                                                    | Input Format        |
 | ------------------------------------------------------------| --------------------|
 | [Gmsh](https://gmsh.info) (ver 4.10.2+)                     | stl, pdb, map, emd  |
