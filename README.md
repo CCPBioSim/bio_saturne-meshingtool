@@ -38,7 +38,7 @@ they have been added to $PATH.
 
 | Software                                                    | Input Format        |
 | ------------------------------------------------------------| --------------------|
-| <a href="https://gmsh.info" target="_blank">Gmsh</a> (ver 4.10.2+)                     | stl, pdb, map, emd  |
+| <a href="https://gmsh.info" target=”_blank”>Gmsh</a> (ver 4.10.2+)                     | stl, pdb, map, emd  |
 | <a href="https://www.cgl.ucsf.edu/chimerax/" target="_blank">ChimeraX</a> (ver 1.3+)   | pdb, map, emd       |
 | <a href="https://www.ccpem.ac.uk/download.php" target="_blank">CCP-EM</a> (ver 1.5.0+) | map, emd            |
 
