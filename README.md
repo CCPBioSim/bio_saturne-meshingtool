@@ -38,7 +38,7 @@ they have been added to $PATH.
 
 | Software                                                    | Input Format        |
 | ------------------------------------------------------------| --------------------|
-| [Gmsh](https://gmsh.info){:target="_blank"} (ver 4.10.2+)                     | stl, pdb, map, emd  |
+| [Gmsh](https://gmsh.info){"_blank"} (ver 4.10.2+)                     | stl, pdb, map, emd  |
 | [ChimeraX](https://www.cgl.ucsf.edu/chimerax/) (ver 1.3+)   | pdb, map, emd       |
 | [CCP-EM](https://www.ccpem.ac.uk/download.php) (ver 1.5.0+) | map, emd            |
 
