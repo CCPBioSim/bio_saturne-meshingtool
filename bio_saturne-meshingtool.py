@@ -6,6 +6,7 @@ _filepath = path to a file including filename and extension
 _path = path to software"""
 
 import sys
+import traceback
 from datetime import datetime
 import logging
 import importlib
