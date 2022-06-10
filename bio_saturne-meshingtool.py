@@ -8,13 +8,12 @@ _path = path to software"""
 import sys
 from datetime import datetime
 import logging
+import importlib
 import subprocess as sp #Built in
 import argparse
 import re
 import os
 import math
-import matplotlib.pyplot as plt
-import numpy as np
 import yaml
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
@@ -519,6 +518,8 @@ def format_title(lines, hist_count):
 
 def save_histogram(title, bins, freqs, mesh_name):
     '''Uses matplot lib to plot and save the histograms'''
+    plt = importlib.import_module("matplotlib.pyplot")
+    np = importlib.import_module("numpy")
     #Captures the output log of matplotlib so this isn't displayed
     plt_logger = logging.getLogger('matplotlib')
     Logger.setLevel(level=logging.DEBUG)
