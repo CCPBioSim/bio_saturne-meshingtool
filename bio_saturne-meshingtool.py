@@ -239,11 +239,12 @@ def check_software_install(software_name, version):
         path = which_software
     else:
         grep_software = grep_software_path(software_name)
-        try:
-            path_exp = re.compile(r'.*="(.*/'+software_name+'.*)"')
-            path = path_exp.findall(grep_software)[0]
-        except:
+        path_exp = re.compile(r'.*="(.*/'+software_name+'.*)"')
+        path = path_exp.findall(grep_software)
+        if path == []:
             path = input_software_path(software_name, version)
+        else:
+            path = path[0]
     path = path.split(" ")[0]
     path = path.strip()
     current_version = find_software_ver(path)
