@@ -139,7 +139,7 @@ def launcher(cmd, ig_error=False):
             ind = ind + 1
         else:
             error_file = write_launcher_err(stderr.decode('utf-8'), ', '.join(cur_cmd))
-            raise LauncherError(', '.join(cur_cmd), \
+            raise LauncherError(' '.join(cur_cmd), \
             "\nPlease view the complete output in the file "+ error_file)
     if len(lstderr) == 1 and len(lstdout) == 1:
         lstderr = lstderr[0]
@@ -176,8 +176,12 @@ def grep_software_path(soft_name):
     '''Grep for the given software in the bashrc to check for
     Its path if an alias is used'''
     home = os.environ['HOME']
+    check_cmd = ['find', home + '/.bashrc']
+    check_out, check_err = launcher(check_cmd, True)
+    if 'No such file or directory' in check_out:
+        return check_err
     grep_command = ['grep', soft_name, home + '/.bashrc']
-    gc_out, gc_err = launcher(grep_command)
+    gc_out, gc_err = launcher(grep_command, True)
     if len(gc_err) == 0:
         return gc_out
     return gc_err
@@ -204,6 +208,23 @@ def find_software_ver(path):
         return ver_out
     return ver_err
 
+def input_software_path(software_name, version):
+    '''Allows the user to input a path to the required software
+    if the program cannot find it on their system'''
+    enter_path = input("\nUnable to locate "+ software_name +
+    " version " + version + " on your system\n Would you like to "
+    "enter the path to this software on your system? (y/n):")
+    if enter_path.lower() == 'y':
+        software_path = input("\nPlease enter the path to "
+        + software_name + " version " + version + ":")
+        check_path_cmd = ['find', software_path]
+        check_path_out, check_path_err = launcher(check_path_cmd, True)
+        if check_path_err != "":
+            raise SoftwareNotFound(software_name, version)
+        return software_path
+    raise SoftwareNotFound(software_name, version)
+
+
 def check_software_install(software_name, version):
     '''Performs checks on the installation of required software of the
     required version'''
@@ -217,7 +238,7 @@ def check_software_install(software_name, version):
             path_exp = re.compile(r'.*="(.*/'+software_name+'.*)"')
             path = path_exp.findall(grep_software)[0]
         except:
-            raise SoftwareNotFound(software_name, version)
+            path = input_software_path
     path = path.split(" ")[0]
     path = path.strip()
     current_version = find_software_ver(path)
