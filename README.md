@@ -36,8 +36,8 @@ the pipeline unless they have been installed previous.
 The pipeline will check that software has been installed centrally, or alternatively that
 they have been added to $PATH.
 
-| Software                                                    | Input Format        |
-| ------------------------------------------------------------| --------------------|
+| Software                                                                               | Input Format        |
+| ---------------------------------------------------------------------------------------| --------------------|
 | <a href="https://gmsh.info" target=”_blank”>Gmsh</a> (ver 4.10.2+)                     | stl, pdb, map, emd  |
 | <a href="https://www.cgl.ucsf.edu/chimerax/" target="_blank">ChimeraX</a> (ver 1.3+)   | pdb, map, emd       |
 | <a href="https://www.ccpem.ac.uk/download.php" target="_blank">CCP-EM</a> (ver 1.5.0+) | map, emd            |
@@ -65,8 +65,6 @@ Inside the file you can specify parameters for meshing, cleaning (using CCP-EM's
 (using ChimeraX). The parameters are listed below and those that are required for the pipeline to run are marked
 as such.
 
-<span style ="color:red;">*</sup></span>*Required* &nbsp; <span style ="color:red;">**</sup></span>*Required for pdb input*
-
 - ```software```<span style ="color:red;">*</sup></span> The meshing software to generate the mesh.
 - ```format```<span style ="color:red;"><sup>*</sup></span> The format of the mesh you wish to generate.
 - ```name``` The filename for the resulting mesh (excluding the extension) if not provided then the
@@ -78,6 +76,8 @@ mesh file will be saved as '{input file name}_3d'.
 give a smoother surface and therefore STL<sup>[1]</sup>.
 
 [1]:  https://www.cgl.ucsf.edu/chimerax/docs/user/commands/surface.html
+
+<font size="1"><span style ="color:red;">*</sup></span>*Required* &nbsp; <span style ="color:red;">**</sup></span>*Required for pdb input*</font>
 
 ## Output
 Once the pipeline is complete the current directory will have the following structure and contents:
@@ -117,14 +117,21 @@ is created which stores graphed data from the quality log file on various aspect
 ## Examples
 - ## From EMD/Map
   Map files and EMDB entires are ran in a similar manner from the command line. However for maps, the map file must pre-exist on your local machine whereas EMD only requires an entry number and will download the map for you.
+
+  In the examples below, the EMBD entry number 26222 corresponds to the 3D structure of GroEL protein compelxes<sup>[2]</sup>.
+
+  **From EMD**
   ``` sh
   bio_saturne-meshingtool.py -i 26222 -f emd -c 26222_configs.yaml
-    ```
+  ```
+
+  **From Map**
   ``` sh
   bio_saturne-meshingtool.py -i emd_26222.map -f map -c 26222_configs.yaml
   ```
-  ### 26222_configs.yaml
-  If you are implementing thresholding for an EMD entry, you can sometimes find a suggested thresholding value called 'Recommended contour level' from the database entry's validation tab.
+
+  **26222_configs.yaml** contains the following lines:
+
   ``` yaml
     software: "gmsh"
     format: "msh"
@@ -132,9 +139,11 @@ is created which stores graphed data from the quality log file on various aspect
     threshold: 0.154
     dust_filter: "true"
   ```
+  <font size="1">**Note**: If you are implementing thresholding, you can sometimes find a suggested value ('Recommended contour level') under the Validation tab of the entry on [EMDB](https://www.ebi.ac.uk/emdb/).</font>
+
   3D surface of EMD-26222 from EMDB<sup>[2]</sup> |  Paraview visualisation of 26222_mesh.msh
   :----------------------------------------------:|:-------------------------:
-  ![](./imgs/26222_emd.jpeg)                 |  ![](./imgs/26222_pv.jpeg)
+  ![](./imgs/26222_emd.jpeg)                       |  ![](./imgs/26222_pv.jpeg)
 
   [2]:  https://www.ebi.ac.uk/emdb/EMD-26222
 
@@ -143,7 +152,7 @@ is created which stores graphed data from the quality log file on various aspect
   ``` sh
   bio_saturne-meshingtool.py -i 7Q0T.pdb -f pdb -c lysozyme_configs.yaml
   ```
-  ### lysozyme_configs.yaml
+  **lysozyme_configs.yaml** contains the following lines:
   ``` yaml
    software: "gmsh"
    format: "msh"
@@ -154,31 +163,37 @@ is created which stores graphed data from the quality log file on various aspect
 
   3D view of 7Q0T from PDB<sup>[3]</sup> |  Paraview visualisation of lysozyme_mesh_pr2_gs2.msh
   :-------------------------------------:|:-------------------------:
-  ![](./imgs/pdb_lys_pdb.jpeg)      |  ![](./imgs/pdb_lys_2_1.jpeg)
+  ![](./imgs/pdb_lys_pdb.jpeg)           |  ![](./imgs/pdb_lys_2_1.jpeg)
 
   [3]:  https://www.rcsb.org/structure/7Q0T
 
-  Below are two further examples from the same pdb file using different configuration values for the **probe_radius** and **grid_spacing**. By comparing the images below to the one above (**probe_radius** and **grid_spacing** are 2), increasing the **grid_spacing** decreases the fineness of the mesh and increasing the **probe_radius** increases the smoothness of the surface.
-  probe_radius: 5, grid_spacing: 1 |  probe_radius: 2, grid_spacing: 2
-  :-------------------------------------:|:-------------------------:
-  ![](./imgs/pdb_lys_5_1.jpeg)      |  ![](./imgs/pdb_lys_2_2.jpeg)
+  Below are two further examples using the same pdb file but different values for the **probe_radius** and **grid_spacing**<sup>[4]</sup>. 
 
-  When choosing the appropraite values for the **probe_radius** and the **grid_spacing** it may be more approriate initially to visualise such changes in ChimeraX GUI or complete multiple pipeline runs and visualise the output.
+  [4]:  https://www.cgl.ucsf.edu/chimerax/docs/user/commands/surface.html#sop
+  
+  By comparing the images below to the one above, increasing the **grid_spacing** decreases the fineness of the mesh and increasing the **probe_radius** increases the smoothness of the surface.
+
+  probe_radius: 5, grid_spacing: 1 |  probe_radius: 2, grid_spacing: 2
+  :-------------------------------:|:---------------------------------:
+  ![](./imgs/pdb_lys_5_1.jpeg)     |  ![](./imgs/pdb_lys_2_2.jpeg)
+
+  <font size = "1">**Note**: When choosing the best values for **probe_radius** and **grid_spacing** it may be more appropriate to , initially, visualise the changes in ChimeraX's GUI.</font>
 
 - ## From STL
   ``` sh
   bio_saturne-meshingtool.py -i sphere.stl -f stl -c sphere_configs.yaml
   ```
-  ### sphere_configs.yaml
+  **sphere_configs.yaml** contains the following lines:
   ``` yaml
    software: "gmsh"
    format: "msh"
    name: "sphere_mesh"
   ``` 
-  When using an STL input the meshing software will use the tetrahedra present on the surface to generate an internal volume. The surface will not be re-triangulated.
+  When using an STL file as input to the pipeline, the meshing software will use the triangles present on the surface to generate an internal volume. The surface may not be re-triangulated.
+  
   STL                               |   MSH
   :--------------------------------:|:-------------------------------------:
-  ![](./imgs/stl_sphere.jpeg)  |  ![](./imgs/stl_sphere_mesh.jpeg)
+  ![](./imgs/stl_sphere.jpeg)       |  ![](./imgs/stl_sphere_mesh.jpeg)
   
 
 - ## From MSH
@@ -187,11 +202,11 @@ is created which stores graphed data from the quality log file on various aspect
   ```
   This uses code_saturne capabilities to run a quality check on a pre-existing mesh.
   As mentioned previously, the histogram flag (```-hg```) is optional all data can be found in the file ```mesh_name_quality.log```.
-    25408_msh<sup>[4]</sup>         |   Histogram
+    25408_msh<sup>[5]</sup>         |   Histogram
   :--------------------------------:|:-------------------------------------:
   ![](./imgs/msh_25408.jpeg)        |  ![](./imgs/msh_25408_hist.jpeg)
 
   The histogram on the right is just one example of the histograms generated from code_saturne's 
   pre-processor data. All values shown on the axis are rounded to 3 s.f.
 
-  [4]:  https://www.ebi.ac.uk/emdb/EMD-25408
+  [5]:  https://www.ebi.ac.uk/emdb/EMD-25408
