@@ -43,7 +43,7 @@ class SoftwareNotFound(Exception):
         self.software = software
         self.version = version
         self.message = '\n----------------Software Not Found Error----------------\n'\
-        +"Please install "+ software +" version " + version + " or export it to $PATH"
+        +"Please install "+ software +" version " + version + "+ or export it to $PATH"
         super().__init__(self.message)
 
 class UnsupportedError(Exception):
@@ -97,6 +97,11 @@ class ChimeraError(Exception):
 
 logging.basicConfig(level=logging.DEBUG)
 Logger = logging.getLogger('mesh-generator')
+
+def exit_tool():
+    '''Ends the program'''
+    print("-----------END PROGRAM------------")
+    sys.exit()
 
 def write_launcher_err(launcher_err, cmd):
     '''Writes the entirity of the command output to a text file'''
@@ -212,11 +217,11 @@ def input_software_path(software_name, version):
     '''Allows the user to input a path to the required software
     if the program cannot find it on their system'''
     enter_path = input("\nUnable to locate "+ software_name +
-    " version " + version + " on your system\n Would you like to "
-    "enter the path to this software on your system? (y/n):")
+    " version " + version + "+ on your system\n Would you like to "
+    "enter the path to this software on your system? (y/n): ")
     if enter_path.lower() == 'y':
         software_path = input("\nPlease enter the path to "
-        + software_name + " version " + version + ":")
+        + software_name + " version " + version + "+ :")
         check_path_cmd = ['find', software_path]
         check_path_out, check_path_err = launcher(check_path_cmd, True)
         if check_path_err != "":
@@ -307,7 +312,7 @@ def process_gmsh_error(err, out, input_name, log_path):
     print("Warning: "+ warnings)
     cont = ""
     while cont not in ('y', 'n'):
-        cont = input("Continue mesh generation? (y/n)").lower()
+        cont = input("Continue mesh generation? (y/n): ").lower()
     if cont == 'n':
         exit_tool()
 
@@ -706,24 +711,24 @@ def make_logging_folder(mesh_name):
 
 def mesh_filename_preexist(mesh_name, mesh_exten):
     '''Checks if the given name for the mesh file already exists in the current directory'''
-    preexist = False
     lsout, lserr = launcher(['ls'])
     mesh_filename = format_mesh_filename(mesh_name, mesh_exten)
     if mesh_filename in lsout:
-        preexist = True
         cont = ""
         #Allows the user to enter a new file name or overwrite the pre-exsisting file
         print("WARNING: File of the name", mesh_filename, "already exists in the"
-        "current directory")
-        while cont not in ('y', 'n'):
-            cont = input("Enter 'Y' to continue and overwrite the file or 'N' to"
-            "provide a new file name: ")
+        " current directory")
+        cont = input("\nEnter 'y' to overwrite the file, 'n' to"
+        " provide a new mesh file name or 'q' to quit: ")
+        cont = cont.lower()
+        while cont not in ('y', 'n', 'q'):
+            cont = input("Please enter 'y', 'n' or 'q': ")
             cont = cont.lower()
-            if cont not in ('y', 'n'):
-                print("\nPlease enter 'Y' or 'N'")
         if cont == 'n':
             mesh_filename = input("Please enter a new file name: ")
-    return preexist, mesh_filename
+        elif cont == 'q':
+            exit_tool()
+    return mesh_filename
 
 def format_mesh_filename(mesh_name, mesh_exten):
     '''Replaces any spaces in the given filename with underscores and checks it doesn't
@@ -742,10 +747,7 @@ def check_mesh_filename(mesh_name, mesh_exten, input_name):
     if mesh_name is None:
         mesh_name = input_name + "_3d"
     #Then check if the file already exsists
-    while True:
-        preexist, mesh_filename = mesh_filename_preexist(mesh_name, mesh_exten)
-        if not preexist:
-            break
+    mesh_filename = mesh_filename_preexist(mesh_name, mesh_exten)
     return mesh_filename
 
 def check_meshing_args(mesh_config_dict, supported_dict):
@@ -778,11 +780,11 @@ def check_input_args(input_format, inp, supported_input, soft_dict):
     #Add extra software requirements for map cleaning and generating an stl
     if input_format in ('map', 'emd'):
         soft_dict['ucsf-chimerax'] = ['1.3']
-        soft_dict['ccpem'] = ['1.5.0']
+        soft_dict['ccpem'] = ['1.5']
     elif input_format == 'pdb':
         soft_dict['ucsf-chimerax'] = ['1.3']
     if input_format != 'msh':
-        soft_dict['gmsh'] = ['4.8.4']
+        soft_dict['gmsh'] = ['4.8']
     return soft_dict
 
 def clean_directory(mesh_name, ini_dir):
@@ -813,6 +815,7 @@ def download_emd(emd):
     unzip_cmd = ['gunzip', 'emd_'+str(entry_num)+'.map.gz']
     launcher([emd_cmd, mv_emd_cmd, unzip_cmd])
     map_filename = 'emd_'+str(entry_num)+'.map'
+    print(map_filename + " successfully downloaded\n")
     return map_filename
 
 def ccpem_cleaning(ccpem_path, map_filepath, map_name, map_config_dict):
@@ -901,6 +904,7 @@ def to_stl(chimera_path, filepath, name, exten, chi_config_dict):
         process_chi_error(chi_err, cxc_filename)
     mv_tmp_cmd = ['mv', cxc_filename, '.tmp']
     launcher(mv_tmp_cmd)
+    print("Successfully generated "+ name + ".stl\n")
     return name
 
 def get_initial_dir():
@@ -917,7 +921,7 @@ def get_initial_dir():
         "start this run again")
         ask = True
         while ask:
-            overwrite = input("Overwrite this directory (y/n)")
+            overwrite = input("Overwrite this directory (y/n): ")
             if overwrite.lower() == 'y':
                 rm_tmp_cmd = ['rm', '-r', '.tmp']
                 launcher(rm_tmp_cmd)
@@ -927,18 +931,13 @@ def get_initial_dir():
                 exit_tool()
     return ini_dir
 
-def exit_tool():
-    '''Ends the program'''
-    print("-----------END PROGRAM------------")
-    sys.exit()
-
 def main():
     initial_contents = get_initial_dir()
     meshing_soft = {}
     #CodeSaturne is the only software required for any input format
     base_softs = {
-        'code_saturne': ['7.0.0'],
-        'cs_preprocess': ['7.0.0'],
+        'code_saturne': ['7.0'],
+        'cs_preprocess': ['7.0'],
         }
     #All supported formats and softwares which may be given as arguments
     supported_dict = {
@@ -1040,7 +1039,7 @@ def main():
     if input_exten == "stl":
         #Handles meshing STL files using gmsh
         if mesh_config_dict['software'] == 'gmsh':
-            print("\n----------------GMSH----------------")
+            print("----------------GMSH----------------")
             gmsh_from_stl(soft_dict, mesh_config_dict, input_filepath, input_name, log_foldr,
                           mesh_filepath, mesh_name)
         #Handles meshing STL files using Salome
@@ -1051,7 +1050,7 @@ def main():
     print("\n----------------CODESATURNE----------------")
     quality_file = cs_prepro_quality(soft_dict['cs_preprocess'][1], soft_dict['code_saturne'][1],
                                      mesh_filepath, log_foldr)
-    print("CodeSaturne quality assessment complete.\nFile located: "+ quality_file)
+    print("CodeSaturne quality assessment complete.\nFile located: "+ quality_file +"\n")
 
     #If histogram flag is given then save data in histogram form for the mesh
     if not args.histograms:
@@ -1071,7 +1070,7 @@ def main():
 try:
     main()
 except Exception as e:
-    print(e)
+    logging.error(traceback.format_exc())
     exit_tool()
 else:
     print("Unexpected Error Occurred")
