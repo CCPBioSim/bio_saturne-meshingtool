@@ -130,6 +130,10 @@ def launcher(cmd, ig_error=False):
     end = len(cmds)
     while ind < end:
         cur_cmd = cmds[ind]
+        try:
+            sp.check_call(cur_cmd)
+        except subprocess.CalledProcessError as err:
+            raise LauncherError(' '.join(cur_cmd), err)
         process_1 = sp.Popen(cur_cmd, stdout=sp.PIPE, stderr=sp.PIPE)
         stdout, stderr = process_1.communicate()
         #No error or want to parse the error
