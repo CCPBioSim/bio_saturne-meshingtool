@@ -207,6 +207,6 @@ is created. This contains histogram pdf files which are generated from the data 
   :--------------------------------:|:-------------------------------------:
   ![](./imgs/msh_25408.jpeg)        |  ![](./imgs/msh_25408_hist.jpeg)
 
-  The histogram on the right is just one example of the histograms generated from code_saturne's quality criterea. All values shown on the axis are rounded to 3 s.f (significant figures).
+  The histogram on the right is just one example of the histograms generated from code_saturne's quality criteria. All values shown on the axis are rounded to 3 s.f (significant figures).
 
   [5]:  https://www.ebi.ac.uk/emdb/EMD-25408
