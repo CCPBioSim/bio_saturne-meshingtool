@@ -6,16 +6,18 @@ _filepath = path to a file including filename and extension
 _path = path to software"""
 
 import sys
-import traceback
 from datetime import datetime
-import logging
-import importlib
-import subprocess as sp #Built in
-import argparse
-import re
-import os
-import math
-import yaml
+builtin = sys.builtin_module_names
+modules = ['traceback', 'logging', 'importlib', 'subprocess',
+          'argparse', 're', 'os', 'math', 'yaml']
+for mod in modules:
+    try:
+        exec('import ' + mod)                  
+    except ImportError as ie:
+        print('\n----------------Import Error----------------\n')
+        print('Error: {}'.format(ie))
+        print('\nTry installing using:\npip install ' + mod)
+
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 class LauncherError(Exception):
@@ -24,7 +26,7 @@ class LauncherError(Exception):
     def __init__(self, cmd, message):
         self.cmd = cmd
         self.message = '\n----------------Launcher Error----------------\n'\
-        +cmd+'\n'+message
+        +cmd+'\n' + message
         super().__init__(self.message)
 
 class NotFoundinFile(Exception):
@@ -34,7 +36,7 @@ class NotFoundinFile(Exception):
         self.search_term = search_term
         self.search_file = search_file
         self.message = '\n----------------Not Found in File Error----------------\n'\
-        +'Cannot locate '+search_term+' in file ' +search_file +'\n'+message
+        +'Cannot locate '+search_term+' in file ' + search_file +'\n'+message
         super().__init__(self.message)
 
 class SoftwareNotFound(Exception):
@@ -101,7 +103,7 @@ Logger = logging.getLogger('mesh-generator')
 
 def exit_tool():
     '''Ends the program'''
-    print("-----------END PROGRAM------------")
+    print("\n----------------END PROGRAM----------------\n")
     sys.exit()
 
 def write_launcher_err(launcher_err, cmd):
@@ -130,12 +132,20 @@ def launcher(cmd, ig_error=False):
     end = len(cmds)
     while ind < end:
         cur_cmd = cmds[ind]
-        try:
-            sp.check_call(cur_cmd)
-        except subprocess.CalledProcessError as err:
-            raise LauncherError(' '.join(cur_cmd), err)
-        process_1 = sp.Popen(cur_cmd, stdout=sp.PIPE, stderr=sp.PIPE)
-        stdout, stderr = process_1.communicate()
+        if not ig_error:
+            #Parses errors arising from subprocess
+            try:
+                process_1 = subprocess.run(cur_cmd, stdout = subprocess.PIPE,
+                                      stderr = subprocess.PIPE, check = True)
+            except subprocess.CalledProcessError as err:
+                print('\n----------------Launcher Error----------------\n')
+                print(err)
+                exit_tool()
+            stdout = process_1.stdout
+            stderr = process_1.stderr
+        else:
+            process_1 = subprocess.Popen(cur_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process_1.communicate()
         #No error or want to parse the error
         if len(stderr.decode('utf-8')) == 0 or (ig_error and \
         len(stderr.decode('utf-8')) != 0):
@@ -149,7 +159,7 @@ def launcher(cmd, ig_error=False):
             ind = ind + 1
         else:
             error_file = write_launcher_err(stderr.decode('utf-8'), ', '.join(cur_cmd))
-            raise LauncherError(' '.join(cur_cmd), \
+            raise LauncherError(' '.join(cur_cmd),
             "\nPlease view the complete output in the file "+ error_file)
     if len(lstderr) == 1 and len(lstdout) == 1:
         lstderr = lstderr[0]
@@ -199,7 +209,7 @@ def grep_software_path(soft_name):
 def which_software_path(soft_name):
     '''Attempts to find the software path using which'''
     which_path_cmd = ['which', soft_name]
-    wp_out, wp_err = launcher(which_path_cmd)
+    wp_out, wp_err = launcher(which_path_cmd, True)
     return wp_out
 
 def find_software_ver(path):
@@ -550,8 +560,18 @@ def format_title(lines, hist_count):
 
 def save_histogram(title, bins, freqs, mesh_name):
     '''Uses matplot lib to plot and save the histograms'''
-    plt = importlib.import_module("matplotlib.pyplot")
-    np = importlib.import_module("numpy")
+    try:
+        plt = importlib.import_module("matplotlib.pyplot")
+    except ImportError:
+        print('\n----------------Import Error----------------\n')
+        print('Error: {}'
+              '\nTry installing using:\npip install maplotlib'.format(ie))
+    try:
+        np = importlib.import_module("numpy")
+    except ImportError as ie:
+        print('\n----------------Import Error----------------\n')
+        print('Error: {}'
+              '\nTry installing using:\npip install numpy'.format(ie))
     #Captures the output log of matplotlib so this isn't displayed
     plt_logger = logging.getLogger('matplotlib')
     Logger.setLevel(level=logging.DEBUG)
@@ -701,7 +721,7 @@ def preprocess_hist_data(quality_file, mesh_name):
 def process_cs_quality(quality_file, save_hist, mesh_name):
     '''Generates histograms if specified using the -hg flag'''
     if save_hist:
-        print("\n----------HISTOGRAMS----------")
+        print("\n----------HISTOGRAMS----------\n")
         hist_foldr_cmd = ['mkdir', mesh_name+'_quality/'+mesh_name + '_histograms']
         launcher(hist_foldr_cmd)
         hist_titles, hist_data_start, hist_data_end = preprocess_hist_data(quality_file, mesh_name)
@@ -807,7 +827,7 @@ def clean_directory(mesh_name, ini_dir):
 
 def download_emd(emd):
     '''Use rsync to download the map file from EMDB'''
-    print("------------DOWNLOADING EMD FILE--------------")
+    print("\n------------DOWNLOADING EMD FILE--------------\n")
     if emd.isdigit():
         entry_num = int(emd)
     else:
@@ -878,7 +898,7 @@ def process_chi_error(chi_err, cxc_filename):
 
 def to_stl(chimera_path, filepath, name, exten, chi_config_dict):
     '''Convert the given file to an STL using ChimeraX'''
-    print("------------CONVERTING TO STL------------")
+    print("\n------------CONVERTING TO STL------------\n")
     cxc_filename = name+"_chimerax_script.cxc"
     chi_configs = chi_config_dict.keys()
     cxc_file = open(cxc_filename, 'w')
@@ -1045,7 +1065,7 @@ def main():
     if input_exten == "stl":
         #Handles meshing STL files using gmsh
         if mesh_config_dict['software'] == 'gmsh':
-            print("----------------GMSH----------------")
+            print("\n----------------GMSH----------------\n")
             gmsh_from_stl(soft_dict, mesh_config_dict, input_filepath, input_name, log_foldr,
                           mesh_filepath, mesh_name)
         #Handles meshing STL files using Salome
@@ -1053,7 +1073,7 @@ def main():
             print("salome")
 
     #Run Quality Checks on resultant mesh_filepath
-    print("\n----------------CODESATURNE----------------")
+    print("\n----------------CODESATURNE----------------\n")
     quality_file = cs_prepro_quality(soft_dict['cs_preprocess'][1], soft_dict['code_saturne'][1],
                                      mesh_filepath, log_foldr)
     print("CodeSaturne quality assessment complete.\nFile located: "+ quality_file +"\n")
@@ -1066,9 +1086,9 @@ def main():
     process_cs_quality(quality_file, save_hist, mesh_name)
 
     #Clean the directory by moving any intermediate files/folders to .tmp
-    print("-----------------CLEAN-------------")
+    print("\n----------------CLEAN----------------\n")
     clean_directory(mesh_name, initial_contents)
-    print("\nFurther files generated by intercalated software is stored in "
+    print("Further files generated by intercalated software is stored in "
           +run_directory+"/.tmp")
     exit_tool()
 
@@ -1076,7 +1096,13 @@ def main():
 try:
     main()
 except Exception as e:
-    logging.error(traceback.format_exc())
+    print(e)
+    if not hasattr(e, 'message'):
+        print('\n----------------ERROR----------------\n')
+        print(logging.error(traceback.format_exc()))
+    elif '----------------' not in e.message:
+        print('\n----------------ERROR----------------\n')
+        print(logging.error(traceback.format_exc()))
     exit_tool()
 else:
     print("Unexpected Error Occurred")
