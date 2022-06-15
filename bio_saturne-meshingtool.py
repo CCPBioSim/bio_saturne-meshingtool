@@ -91,11 +91,11 @@ class GmshError(Exception):
 class ChimeraError(Exception):
     '''Error handling when Chimera throws an error, which specifies
     which process in which the error has occured'''
-    def __init__(self, script, message=None):
+    def __init__(self, script, error_file, message=None):
         self.script = script
         self.message = '\n----------------Chimera Error----------------\n'\
         +"Chimera error: "+message+ " \nWhen executing the following script:\n" + script +\
-        "\nThe file chimera_error.txt has more details"
+        "\nThe file "+ error_file +" has more details"
         super().__init__(self.message)
 
 logging.basicConfig(level=logging.DEBUG)
@@ -263,7 +263,11 @@ def check_software_install(software_name, version):
     path = path.split(" ")[0]
     path = path.strip()
     current_version = find_software_ver(path)
-    if current_version is None or not version in current_version:
+    vers_exp = re.compile(r'\d\.')
+    cur_version = vers_exp.findall(current_version)
+    req_version = vers_exp.findall(version)
+    req_version = vers_exp.findall(version)
+    if not set(req_version).issubset(cur_version):
         raise SoftwareNotFound(software_name, version)
     return path
 
@@ -785,7 +789,7 @@ def check_meshing_args(mesh_config_dict, supported_dict):
         #Check the meshing software is supported
         raise UnsupportedError('configured meshing software', supported_dict['meshing_soft'])
 
-def check_input_args(input_format, inp, supported_input, soft_dict):
+def check_input_args(input_format, inp, supported_input, soft_dict, yaml_file):
     '''Check the input argument'''
     #Check the format of the input file is supported
     if input_format not in supported_input:
@@ -806,7 +810,17 @@ def check_input_args(input_format, inp, supported_input, soft_dict):
     #Add extra software requirements for map cleaning and generating an stl
     if input_format in ('map', 'emd'):
         soft_dict['ucsf-chimerax'] = ['1.3']
-        soft_dict['ccpem'] = ['1.5']
+        loader = yaml.Loader
+        stream = open(yaml_file, 'r')
+        try:
+            mesh_config_dict = yaml.load(stream, Loader=loader)
+        except yaml.YAMLError:
+            raise InputError(yaml_file, "\nPlease check the contents of your yaml "
+                         "configuration file \n(use http://www.yamllint.com/ to" 
+                         " check for formatting errors)")
+        mesh_configs = list(mesh_config_dict.keys())
+        if 'threshold' in mesh_configs or 'dust_filter'in mesh_configs:
+            soft_dict['ccpem'] = ['1.5']
     elif input_format == 'pdb':
         soft_dict['ucsf-chimerax'] = ['1.3']
     if input_format != 'msh':
@@ -871,7 +885,7 @@ def ccpem_cleaning(ccpem_path, map_filepath, map_name, map_config_dict):
     #Return the cleaned map name
     return map_name+'_cleaned.map'
 
-def process_chi_error(chi_err, cxc_filename):
+def process_chi_error(chi_err, cxc_filename, run_directory):
     '''Extracts relevant information to raise a ChimeraError'''
     #Read the chimera script to display to the user
     cxc_script = ""
@@ -894,9 +908,9 @@ def process_chi_error(chi_err, cxc_filename):
     with open(chi_filename, 'w') as chi_file:
         for chi_ln in chi_err:
             chi_file.write(chi_ln + '\n')
-    raise ChimeraError(cxc_script, main_err)
+    raise ChimeraError(cxc_script, main_err, run_directory + '/' + chi_filename)
 
-def to_stl(chimera_path, filepath, name, exten, chi_config_dict):
+def to_stl(chimera_path, filepath, name, exten, chi_config_dict, run_directory):
     '''Convert the given file to an STL using ChimeraX'''
     print("\n------------CONVERTING TO STL------------\n")
     cxc_filename = name+"_chimerax_script.cxc"
@@ -927,10 +941,10 @@ def to_stl(chimera_path, filepath, name, exten, chi_config_dict):
     chi_cmd = [chimera_path, '--nogui', '--offscreen', '--exit', cxc_filename]
     chi_out, chi_err = launcher(chi_cmd, True)
     if chi_err != "":
-        process_chi_error(chi_err, cxc_filename)
+        process_chi_error(chi_err, cxc_filename, run_directory)
     mv_tmp_cmd = ['mv', cxc_filename, '.tmp']
     launcher(mv_tmp_cmd)
-    print("Successfully generated "+ name + ".stl\n")
+    print("Successfully generated "+ name + ".stl can be found in "+ run_directory +"\n")
     return name
 
 def get_initial_dir():
@@ -989,7 +1003,7 @@ def main():
     #Check all arguments and configurations are supported for the input
     #Update the software dictionary depending on required software for specific input formats
     #e.g. ChimeraX for emd and map inputs
-    soft_dict = check_input_args(args.format, args.input, supported_dict['input_format'], soft_dict)
+    soft_dict = check_input_args(args.format, args.input, supported_dict['input_format'], soft_dict, args.configs)
     input_filepath = '../'+args.input
     #For emd entry inputs, the input name is emd_{entry number} and extension is emd
     input_name, input_exten = get_name_and_exten(input_filepath)
@@ -1076,7 +1090,7 @@ def main():
     print("\n----------------CODESATURNE----------------\n")
     quality_file = cs_prepro_quality(soft_dict['cs_preprocess'][1], soft_dict['code_saturne'][1],
                                      mesh_filepath, log_foldr)
-    print("CodeSaturne quality assessment complete.\nFile located: "+ quality_file +"\n")
+    print("CodeSaturne quality assessment complete.\nFile located: "+ run_directory +"/"+ quality_file +"\n")
 
     #If histogram flag is given then save data in histogram form for the mesh
     if not args.histograms:
