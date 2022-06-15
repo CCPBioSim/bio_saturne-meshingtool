@@ -434,7 +434,7 @@ def cs_run_quality(cs_path, study_name, case_name, wd_name):
     +wd_name+'/', '--quality']
     #Check for run_solver.log file
     check_solv_cmd = ['ls', study_name+'/'+ case_name+'/RESU/'+wd_name+'/']
-    solv_out, solv_err = launcher([cp_mesh_cmd, run_init_cmd, run_solv_cmd, check_solv_cmd])
+    solv_out, solv_err = launcher([cp_mesh_cmd, run_init_cmd, run_solv_cmd, check_solv_cmd], True)
     solv_files = solv_out[-1].split('\n')
     if not 'run_solver.log' in solv_files:
         raise CodeSaturneError('running cs_solver --quality', 'Check for the generation of'
