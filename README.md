@@ -49,9 +49,9 @@ run. It also depends on the following python modules, all of which can be instal
 using pip.
 
 - [PyYAML](https://pypi.org/project/PyYAML/)     
-- [Matplotlib](https://pypi.org/project/matplotlib/)
-- [Argparse](https://pypi.org/project/argparse/)      
-- [Numpy](https://pypi.org/project/numpy/)
+- [matplotlib](https://pypi.org/project/matplotlib/)
+- [argparse](https://pypi.org/project/argparse/)      
+- [numpy](https://pypi.org/project/numpy/)
 
 ## Command-line Options
 - ``` -i ``` The input file (including the path if it is not in the current directory).
@@ -73,7 +73,7 @@ mesh file will be saved as '{input file name}_3d'.
 - ```dust_filter``` Boolean value to indicate the use of CCP-EM's dust filter during map cleaning.
 - ```probe_radius```<span style ="color:red;"><sup>**</sup></span> The radius of the probe in Angstroms (Å) used in ChimeraX to generate a surface<sup>[1]</sup>.
 - ```grid_spacing``` Define the spacing in Angstroms (Å) for the surface in ChimeraX, which by default is 0.5 Å. Smaller grid spacing values
-give a smoother surface and therefore STL<sup>[1]</sup>.
+give a smoother surface<sup>[1]</sup>.
 
 [1]:  https://www.cgl.ucsf.edu/chimerax/docs/user/commands/surface.html
 
@@ -106,13 +106,13 @@ If ``` -hg ``` is used when running the pipeline, the histograms directory
 is created. This contains histogram pdf files which are generated from the data in the quality log. They describe on various aspects of the mesh, as listed below.
 * Boundary Cell Thickness
 * Cell Volume
-* Cells Off-Centering Co-efficient
+* Cells Off-Centering Coefficient
 * Cellwise Warping Error
 * Number of Interior Faces per Cell
 * Boundary and Interior Faces
-  * Non-orthoganality Co-efficient
+  * Non-orthogonality Coefficient
   * Warping
-  * Weighting Co-efficient
+  * Weighting Coefficient
 
 ## Examples
 - ## From EMD/Map
