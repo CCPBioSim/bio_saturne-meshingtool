@@ -1068,14 +1068,14 @@ def main():
             map_filepath = ccpem_cleaning(soft_dict['ccpem'][1], map_filepath, map_name,
                                           map_config_dict)
         input_name = to_stl(soft_dict['ucsf-chimerax'][1], map_filepath, map_name, map_exten,
-                            chi_config_dict)
+                            chi_config_dict, run_directory)
         input_exten = 'stl'
         input_filepath = input_name + '.' + input_exten
     elif input_exten == 'pdb':
         pdb_name, pdb_exten = get_name_and_exten(input_filepath)
         #Generates a surface for the pdb and converts this to an STL using Chimera
         input_name = to_stl(soft_dict['ucsf-chimerax'][1], input_filepath, pdb_name, 'pdb',
-                            chi_config_dict)
+                            chi_config_dict, run_directory)
         input_exten = 'stl'
         input_filepath = input_name + '.' + input_exten
 
