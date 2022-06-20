@@ -156,12 +156,12 @@ is created. This contains histogram pdf files which are generated from the data 
   ``` yaml
    software: "gmsh"
    format: "msh"
-   name: "lysozyme_mesh_pr2_gs2"
+   name: "lysozyme_mesh_pr2_gs1"
    probe_radius: 2
    grid_spacing: 1
   ``` 
 
-  3D view of 7Q0T from PDB<sup>[3]</sup> |  Paraview visualisation of lysozyme_mesh_pr2_gs2.msh
+  3D view of 7Q0T from PDB<sup>[3]</sup> |  Paraview visualisation of lysozyme_mesh_pr2_gs1.msh
   :-------------------------------------:|:-------------------------:
   ![](./imgs/pdb_lys_pdb.jpeg)           |  ![](./imgs/pdb_lys_2_1.jpeg)
 
