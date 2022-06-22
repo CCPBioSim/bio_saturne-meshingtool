@@ -434,7 +434,7 @@ def cs_run_quality(cs_path, study_name, case_name, wd_name):
     +wd_name+'/', '--quality']
     #Check for run_solver.log file
     check_solv_cmd = ['ls', study_name+'/'+ case_name+'/RESU/'+wd_name+'/']
-    solv_out, solv_err = launcher([cp_mesh_cmd, run_init_cmd, run_solv_cmd, check_solv_cmd], True)
+    solv_out, solv_err = launcher([cp_mesh_cmd, run_init_cmd, run_solv_cmd, check_solv_cmd])
     solv_files = solv_out[-1].split('\n')
     if not 'run_solver.log' in solv_files:
         raise CodeSaturneError('running cs_solver --quality', 'Check for the generation of'
@@ -748,8 +748,8 @@ def mesh_filename_preexist(mesh_name, mesh_exten):
         #Allows the user to enter a new file name or overwrite the pre-exsisting file
         print("WARNING: File of the name", mesh_filename, "already exists in the"
         " current directory")
-        cont = input("\nEnter 'y' to overwrite the file, 'n' to"
-        " provide a new mesh file name or 'q' to quit: ")
+        cont = input("\nEnter 'y' to use the same filename, 'n' to"
+        " provide a new mesh filename or 'q' to quit: ")
         cont = cont.lower()
         while cont not in ('y', 'n', 'q'):
             cont = input("Please enter 'y', 'n' or 'q': ")
@@ -1000,6 +1000,16 @@ def main():
     #Generate a software dictionary with all the baseline required software
     soft_dict = base_softs.copy()
 
+    #Meshing configurations are only not provided when the input
+    #Is a mesh itself
+    if args.format != 'msh' and args.configs is None:
+        raise InputError('arguments', 'a configuration (.yaml) file is required for the' 
+        ' input format ' + args.format + '.\nPlease refer to the documentation on this '
+        'which can be found here:\nhttps://github.com/CCPBioSim/bio_saturne-meshingtool')
+    elif args.format == 'msh' and args.configs is None:
+        mesh_filepath = '../'+args.input
+        
+
     #Check all arguments and configurations are supported for the input
     #Update the software dictionary depending on required software for specific input formats
     #e.g. ChimeraX for emd and map inputs
@@ -1021,10 +1031,7 @@ def main():
                                                 input_name)
         else:
             mesh_filepath = check_mesh_filename(None, mesh_config_dict['format'], input_name)
-    else:
-        #Meshing configurations are only not provided when the input
-        #Is a mesh itself
-        mesh_filepath = '../'+args.input
+
 
     #If the visualisation flag is enabled add paraview to the software dictionary
     if args.visualise:
@@ -1058,7 +1065,7 @@ def main():
 
     #Handles emd entry number and map file inputs
     if input_exten in ("emd", "map"):
-        if input_exten == 'emd':
+        if input_exten == 'emd': 
             map_filepath = download_emd(input_name)
         elif input_exten == 'map':
             map_filepath = '../'+input_filepath
